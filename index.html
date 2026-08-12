@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rclone Backup Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(15, 23, 42, 0.9);
+      --panel-soft: rgba(30, 41, 59, 0.9);
+      --text: #e5eefc;
+      --muted: #94a3b8;
+      --accent: #7dd3fc;
+      --accent-2: #34d399;
+      --warn: #fbbf24;
+      --error: #fb7185;
+      --border: rgba(148, 163, 184, 0.16);
+      --shadow: 0 28px 90px rgba(2, 6, 23, 0.58);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(52, 211, 153, 0.12), transparent 24%),
+        linear-gradient(180deg, #06101d 0%, #081226 56%, #050816 100%);
+    }
+
+    .shell {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 30px 18px 42px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 0.95fr;
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      letter-spacing: -0.05em;
+      line-height: 0.95;
+    }
+
+    .lede {
+      margin: 12px 0 0;
+      max-width: 72ch;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .card,
+    .panel,
+    .metric {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.8));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-card {
+      border-radius: 24px;
+      padding: 20px;
+    }
+
+    .folder-picker {
+      display: grid;
+      gap: 12px;
+    }
+
+    .picker-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .picker-actions button {
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 14px;
+      background: rgba(2, 6, 23, 0.48);
+      color: var(--text);
+      padding: 12px 14px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .picker-actions .primary {
+      background: linear-gradient(135deg, rgba(125, 211, 252, 0.24), rgba(52, 211, 153, 0.2));
+    }
+
+    .folder-picker strong {
+      font-size: 1rem;
+      color: #f8fbff;
+    }
+
+    .folder-picker small,
+    .hint {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .calendar-line {
+      display: grid;
+      gap: 8px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(2, 6, 23, 0.34);
+    }
+
+    .calendar-line input[type="date"] {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(2, 6, 23, 0.44);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(125, 211, 252, 0.12);
+      color: #d8f3ff;
+      font-size: 0.88rem;
+      width: fit-content;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.14);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr 0.85fr 0.75fr repeat(3, auto);
+      gap: 12px;
+      margin: 16px 0 18px;
+    }
+
+    .toolbar input,
+    .toolbar select,
+    .toolbar button {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(2, 6, 23, 0.45);
+      color: var(--text);
+      padding: 12px 14px;
+      font: inherit;
+    }
+
+    .toolbar button {
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(125, 211, 252, 0.2), rgba(52, 211, 153, 0.16));
+    }
+
+    .toolbar input[type="date"] {
+      min-width: 0;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+      margin: 0 0 16px;
+    }
+
+    .metric {
+      border-radius: 20px;
+      padding: 16px 18px;
+    }
+
+    .metric .label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 10px;
+    }
+
+    .metric .value {
+      display: block;
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .value.good { color: var(--accent-2); }
+    .value.bad { color: var(--error); }
+    .value.info { color: var(--accent); }
+    .value.warn { color: var(--warn); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .chart-card,
+    .panel {
+      border-radius: 24px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .panel-header span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .chart-body {
+      padding: 14px 16px 18px;
+      height: 300px;
+    }
+
+    .chart-body canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 62vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(15, 23, 42, 0.98);
+      color: #cbd5e1;
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    tbody tr:hover { background: rgba(125, 211, 252, 0.06); }
+
+    .level {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #64748b;
+      box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.14);
+    }
+
+    .level.success .dot { background: var(--accent-2); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.14); }
+    .level.failed .dot { background: var(--error); box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14); }
+    .level.unknown .dot { background: var(--warn); box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.14); }
+    .level.info .dot { background: var(--accent); box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.14); }
+
+    .path, .muted {
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .path strong {
+      color: #dbeafe;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .empty {
+      padding: 32px 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .section-hidden {
+      display: none;
+    }
+
+    @media (max-width: 1120px) {
+      .hero, .grid-2, .metrics, .toolbar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .toolbar button:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hero, .grid-2, .metrics, .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        padding: 18px 14px 28px;
+      }
+
+      .hero-card,
+      .metric,
+      .panel {
+        border-radius: 18px;
+      }
+
+      .hero-card,
+      .metric {
+        padding: 14px;
+      }
+
+      .chart-body {
+        height: 230px;
+      }
+
+      th, td {
+        padding: 11px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-card card">
+        <h1>Rclone Backup Dashboard</h1>
+        <p class="lede">Load a logs folder once and the dashboard remembers it. It groups runs by folder, defaults to the newest log date, and turns the raw text into charts and exports.</p>
+      </div>
+      <div class="hero-card card folder-picker">
+        <div class="picker-actions">
+          <button id="loadFolderButton" class="primary" type="button">Load logs folder</button>
+          <button id="reloadFolderButton" type="button">Reload last folder</button>
+        </div>
+        <div class="calendar-line">
+          <strong>Calendar selector</strong>
+          <small>Pick a date to focus on one log day, or clear it to review all loaded logs.</small>
+          <input id="dateInput" type="date" />
+        </div>
+        <div class="status-pill"><span class="status-dot"></span><span id="folderStatus">Waiting for a logs folder</span></div>
+        <div class="hint" id="folderHint">The last used logs folder will auto-load when the browser grants access again.</div>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <input id="searchInput" type="search" placeholder="Search folder names, messages, destinations, or timestamps" />
+      <select id="statusFilter">
+        <option value="all">All statuses</option>
+        <option value="success">Success</option>
+        <option value="failed">Failed</option>
+        <option value="unknown">Unknown</option>
+      </select>
+      <select id="viewFilter">
+        <option value="jobs">Folder summary</option>
+        <option value="activity">Recent activity</option>
+      </select>
+      <button id="csvExport" type="button">Export CSV</button>
+      <button id="jsonExport" type="button">Export JSON</button>
+      <button id="pdfExport" type="button">Export PDF</button>
+    </section>
+
+    <section class="metrics">
+      <div class="metric"><span class="label">Backup folders</span><span id="jobCount" class="value info">0</span></div>
+      <div class="metric"><span class="label">Successful runs</span><span id="successCount" class="value good">0</span></div>
+      <div class="metric"><span class="label">Failed runs</span><span id="failedCount" class="value bad">0</span></div>
+      <div class="metric"><span class="label">Copied files</span><span id="copiedCount" class="value good">0</span></div>
+      <div class="metric"><span class="label">Parsed events</span><span id="lineCount" class="value warn">0</span></div>
+      <div class="metric"><span class="label">Latest run</span><span id="latestRun" class="value info">--</span></div>
+    </section>
+
+    <section id="summarySection" class="grid-2">
+      <div class="chart-card panel">
+        <div class="panel-header">
+          <h2>Run outcomes</h2>
+          <span>Success vs failed runs across all folders</span>
+        </div>
+        <div class="chart-body"><canvas id="statusChart"></canvas></div>
+      </div>
+      <div class="chart-card panel">
+        <div class="panel-header">
+          <h2>Folder performance</h2>
+          <span>Success and failure counts by backup folder</span>
+        </div>
+        <div class="chart-body"><canvas id="folderChart"></canvas></div>
+      </div>
+    </section>
+
+    <section id="summaryTableSection" class="panel" style="margin-bottom: 16px;">
+      <div class="panel-header">
+        <h2>Folder summary</h2>
+        <span>One row per backup target</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Folder</th>
+              <th>Destination</th>
+              <th>Success</th>
+              <th>Failed</th>
+              <th>Last run</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="jobTableBody"><tr><td colspan="6" class="empty">Choose a logs folder to build the summary.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="activitySection" class="panel">
+      <div class="panel-header">
+        <h2>Recent activity</h2>
+        <span>Parsed log lines and job markers</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 180px;">Timestamp</th>
+              <th style="width: 120px;">Type</th>
+              <th style="width: 170px;">Folder</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="activityTableBody"><tr><td colspan="4" class="empty">Load a logs folder to see activity.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEYS = {
+      directoryHandle: "rclone.dashboard.directoryHandle",
+      selectedDate: "rclone.dashboard.selectedDate",
+      search: "rclone.dashboard.search",
+      status: "rclone.dashboard.status",
+      view: "rclone.dashboard.view",
+    };
+
+    const state = {
+      directoryHandle: null,
+      folderName: "",
+      logFiles: [],
+      selectedDate: "",
+      runs: [],
+      events: [],
+      search: "",
+      status: "all",
+      view: "jobs",
+    };
+
+    const elements = {
+      loadFolderButton: document.getElementById("loadFolderButton"),
+      reloadFolderButton: document.getElementById("reloadFolderButton"),
+      dateInput: document.getElementById("dateInput"),
+      folderStatus: document.getElementById("folderStatus"),
+      folderHint: document.getElementById("folderHint"),
+      searchInput: document.getElementById("searchInput"),
+      statusFilter: document.getElementById("statusFilter"),
+      viewFilter: document.getElementById("viewFilter"),
+      csvExport: document.getElementById("csvExport"),
+      jsonExport: document.getElementById("jsonExport"),
+      pdfExport: document.getElementById("pdfExport"),
+      jobTableBody: document.getElementById("jobTableBody"),
+      activityTableBody: document.getElementById("activityTableBody"),
+      lineCount: document.getElementById("lineCount"),
+      copiedCount: document.getElementById("copiedCount"),
+      successCount: document.getElementById("successCount"),
+      failedCount: document.getElementById("failedCount"),
+      jobCount: document.getElementById("jobCount"),
+      latestRun: document.getElementById("latestRun"),
+      summarySection: document.getElementById("summarySection"),
+      summaryTableSection: document.getElementById("summaryTableSection"),
+      activitySection: document.getElementById("activitySection"),
+    };
+
+    let statusChart = null;
+    let folderChart = null;
+
+    bindEvents();
+    bootstrap().catch((error) => {
+      console.error(error);
+      setStatus(`Unable to initialize dashboard: ${error.message || error}`);
+    });
+
+    function bindEvents() {
+      elements.loadFolderButton.addEventListener("click", chooseFolder);
+      elements.reloadFolderButton.addEventListener("click", reloadLastFolder);
+
+      for (const input of [elements.dateInput].filter(Boolean)) {
+        input.addEventListener("change", handleDateChange);
+      }
+
+      elements.searchInput.addEventListener("input", () => {
+        state.search = elements.searchInput.value.trim().toLowerCase();
+        localStorage.setItem(STORAGE_KEYS.search, state.search);
+        render();
+      });
+
+      elements.statusFilter.addEventListener("change", () => {
+        state.status = elements.statusFilter.value;
+        localStorage.setItem(STORAGE_KEYS.status, state.status);
+        render();
+      });
+
+      elements.viewFilter.addEventListener("change", () => {
+        state.view = elements.viewFilter.value;
+        localStorage.setItem(STORAGE_KEYS.view, state.view);
+        render();
+      });
+
+      elements.csvExport.addEventListener("click", exportCsv);
+      elements.jsonExport.addEventListener("click", exportJson);
+      elements.pdfExport.addEventListener("click", exportPdf);
+    }
+
+    async function bootstrap() {
+      restoreFilters();
+      await restoreStoredFolder();
+      render();
+    }
+
+    function restoreFilters() {
+      state.search = localStorage.getItem(STORAGE_KEYS.search) || "";
+      state.status = localStorage.getItem(STORAGE_KEYS.status) || "all";
+      state.view = localStorage.getItem(STORAGE_KEYS.view) || "jobs";
+
+      elements.searchInput.value = state.search;
+      elements.statusFilter.value = state.status;
+      elements.viewFilter.value = state.view;
+    }
+
+    function handleDateChange(event) {
+      const value = event.target.value || "";
+      state.selectedDate = value;
+      syncDateInputs(value);
+      localStorage.setItem(STORAGE_KEYS.selectedDate, value);
+      refreshParsedData();
+    }
+
+    function syncDateInputs(value) {
+      for (const input of [elements.dateInput].filter(Boolean)) {
+        if (input.value !== value) input.value = value;
+      }
+    }
+
+    async function chooseFolder() {
+      if (!window.showDirectoryPicker) {
+        setStatus("This browser cannot open a logs folder picker.");
+        return;
+      }
+
+      try {
+        const handle = await window.showDirectoryPicker({ mode: "read" });
+        await loadDirectory(handle, true);
+      } catch (error) {
+        if (error && error.name !== "AbortError") {
+          setStatus(`Folder load failed: ${error.message || error}`);
+        }
+      }
+    }
+
+    async function reloadLastFolder() {
+      if (state.directoryHandle) {
+        await loadDirectory(state.directoryHandle, false);
+        return;
+      }
+
+      await restoreStoredFolder();
+      render();
+    }
+
+    async function restoreStoredFolder() {
+      const handle = await getStoredDirectoryHandle();
+      if (!handle) {
+        setIdleState();
+        return;
+      }
+
+      if (!(await ensurePermission(handle, false))) {
+        setStatus("Last folder is saved, but permission is not available yet.");
+        setIdleState();
+        return;
+      }
+
+      await loadDirectory(handle, false);
+    }
+
+    async function loadDirectory(handle, persistHandle) {
+      if (!(await ensurePermission(handle, true))) {
+        setStatus("Permission to read that folder was not granted.");
+        return;
+      }
+
+      state.directoryHandle = handle;
+      state.folderName = handle.name || "logs";
+
+      if (persistHandle) {
+        await storeDirectoryHandle(handle);
+      }
+
+      const files = await collectLogFiles(handle);
+      if (files.length === 0) {
+        state.logFiles = [];
+        state.runs = [];
+        state.events = [];
+        state.selectedDate = "";
+        syncDateInputs("");
+        setStatus(`No .txt or .log files found in ${state.folderName}`);
+        elements.folderHint.textContent = `Loaded folder ${state.folderName}, but it did not contain any log files.`;
+        render();
+        return;
+      }
+
+      state.logFiles = files.sort((left, right) => right.dateKey - left.dateKey || right.name.localeCompare(left.name));
+
+      const availableDates = getAvailableDates(state.logFiles);
+      const storedDate = localStorage.getItem(STORAGE_KEYS.selectedDate) || "";
+      state.selectedDate = availableDates.includes(storedDate) ? storedDate : availableDates[0] || "";
+      syncDateInputs(state.selectedDate);
+      updateDateBounds(availableDates);
+      await refreshParsedData();
+
+      const loadedLabel = state.selectedDate || "all available dates";
+      setStatus(`Loaded ${files.length} log file${files.length === 1 ? "" : "s"} from ${state.folderName}`);
+      elements.folderHint.textContent = `Auto-loaded ${loadedLabel} from ${state.folderName}.`;
+      render();
+    }
+
+    function setIdleState() {
+      elements.folderHint.textContent = "Pick a logs folder once. The dashboard will remember it and reload it on the next visit.";
+      if (!state.directoryHandle) {
+        setStatus("Waiting for a logs folder");
+      }
+    }
+
+    function updateDateBounds(availableDates) {
+      for (const input of [elements.dateInput].filter(Boolean)) {
+        input.min = availableDates[availableDates.length - 1] || "";
+        input.max = availableDates[0] || "";
+      }
+    }
+
+    async function collectLogFiles(handle, prefix = "") {
+      const results = [];
+      for await (const [name, entry] of handle.entries()) {
+        if (entry.kind === "directory") {
+          const nested = await collectLogFiles(entry, `${prefix}${name}/`);
+          results.push(...nested);
+          continue;
+        }
+
+        if (!/\.(txt|log)$/i.test(name)) {
+          continue;
+        }
+
+        const file = await entry.getFile();
+        results.push({
+          name: file.name,
+          path: `${prefix}${file.name}`,
+          text: await file.text(),
+          date: extractFileDate(file.name, file.lastModified),
+          dateKey: extractDateKey(file.name, file.lastModified),
+        });
+      }
+
+      return results;
+    }
+
+    function extractFileDate(name, lastModified) {
+      const fromName = String(name).match(/(\d{4}-\d{2}-\d{2})/);
+      if (fromName) {
+        return fromName[1];
+      }
+
+      return new Date(lastModified || Date.now()).toISOString().slice(0, 10);
+    }
+
+    function extractDateKey(name, lastModified) {
+      return Date.parse(`${extractFileDate(name, lastModified)}T00:00:00`);
+    }
+
+    function getAvailableDates(files) {
+      return Array.from(new Set(files.map((file) => file.date))).sort((left, right) => right.localeCompare(left));
+    }
+
+    async function refreshParsedData() {
+      const activeFiles = state.selectedDate ? state.logFiles.filter((file) => file.date === state.selectedDate) : state.logFiles;
+      const parsed = parseFiles(activeFiles);
+      state.runs = parsed.runs;
+      state.events = parsed.events;
+      render();
+    }
+
+    function parseFiles(files) {
+      const runs = [];
+      const events = [];
+
+      for (const file of files) {
+        const lines = file.text.split(/\r?\n/);
+        let activeRun = null;
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line) continue;
+
+          const startMatch = line.match(/^==== \[(.+?)\] START (.+?) > (.+?) ====$/);
+          if (startMatch) {
+            activeRun = {
+              sourceFile: file.path,
+              startedAt: startMatch[1],
+              folder: startMatch[2],
+              destination: startMatch[3],
+              endedAt: "",
+              status: "unknown",
+              copiedFiles: 0,
+            };
+
+            runs.push(activeRun);
+            events.push({
+              timestamp: startMatch[1],
+              kind: "start",
+              folder: startMatch[2],
+              details: `Started backup to ${startMatch[3]}`,
+              raw: line,
+              sortKey: toEpoch(startMatch[1]),
+            });
+            continue;
+          }
+
+          const endMatch = line.match(/^==== \[(.+?)\] END (.+?) (SUCCESS|FAILED)(?: \(exit (\d+)\))? ====$/);
+          if (endMatch) {
+            const status = endMatch[3].toLowerCase();
+
+            if (activeRun && activeRun.folder === endMatch[2]) {
+              activeRun.endedAt = endMatch[1];
+              activeRun.status = status;
+            }
+
+            events.push({
+              timestamp: endMatch[1],
+              kind: status,
+              folder: endMatch[2],
+              details: status === "success" ? "Backup completed successfully" : `Backup failed${endMatch[4] ? ` with exit code ${endMatch[4]}` : ""}`,
+              raw: line,
+              sortKey: toEpoch(endMatch[1]),
+            });
+            activeRun = null;
+            continue;
+          }
+
+          const logMatch = line.match(/^(\d{4}[/-]\d{2}[/-]\d{2} \d{2}:\d{2}:\d{2})\s+([A-Z]+)\s*: ?(.*)$/);
+          if (logMatch) {
+            const level = normalizeLevel(logMatch[2]);
+            const message = logMatch[3].trim();
+            const detail = splitPathAndMessage(message);
+            const isCopied = /\bCopied\b/i.test(message);
+
+            if (activeRun && isCopied) {
+              activeRun.copiedFiles += 1;
+            }
+
+            events.push({
+              timestamp: logMatch[1],
+              kind: isCopied ? "copied" : level,
+              folder: activeRun ? activeRun.folder : "",
+              details: detail.path ? `${detail.path} - ${detail.message}` : detail.message,
+              raw: line,
+              sortKey: toEpoch(logMatch[1]),
+            });
+            continue;
+          }
+
+          events.push({
+            timestamp: "",
+            kind: activeRun ? "info" : "unknown",
+            folder: activeRun ? activeRun.folder : "",
+            details: line,
+            raw: line,
+            sortKey: 0,
+          });
+        }
+
+        if (activeRun && activeRun.status === "unknown") {
+          activeRun.status = "failed";
+        }
+      }
+
+      return { runs, events };
+    }
+
+    function normalizeLevel(level) {
+      const value = String(level || "").toLowerCase();
+      if (value.includes("err")) return "failed";
+      if (value.includes("warn")) return "unknown";
+      if (value.includes("notice")) return "info";
+      return "info";
+    }
+
+    function splitPathAndMessage(message) {
+      const match = message.match(/^(.*?):\s+(.*)$/);
+      if (!match) return { path: "", message };
+      return { path: match[1].trim(), message: match[2].trim() };
+    }
+
+    function toEpoch(value) {
+      const parsed = Date.parse(String(value).replace(/\//g, "-"));
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    function formatDisplayTimestamp(value) {
+      return value || "--";
+    }
+
+    function matchesSearch(...values) {
+      if (!state.search) return true;
+      return values.some((value) => String(value || "").toLowerCase().includes(state.search));
+    }
+
+    function statusBucket(kind) {
+      if (kind === "success") return "success";
+      if (kind === "failed") return "failed";
+      if (kind === "unknown" || kind === "warn") return "unknown";
+      return "info";
+    }
+
+    function summarizeRuns(runs) {
+      const map = new Map();
+
+      for (const run of runs) {
+        const key = run.folder;
+        if (!map.has(key)) {
+          map.set(key, {
+            folder: run.folder,
+            destination: run.destination,
+            sourceFile: run.sourceFile,
+            success: 0,
+            failed: 0,
+            unknown: 0,
+            latest: run.endedAt || run.startedAt,
+            status: run.status,
+          });
+        }
+
+        const bucket = map.get(key);
+        bucket.success += run.status === "success" ? 1 : 0;
+        bucket.failed += run.status === "failed" ? 1 : 0;
+        bucket.unknown += run.status === "unknown" ? 1 : 0;
+
+        if (toEpoch(run.endedAt || run.startedAt) >= toEpoch(bucket.latest)) {
+          bucket.latest = run.endedAt || run.startedAt;
+          bucket.status = run.status;
+          bucket.destination = run.destination;
+          bucket.sourceFile = run.sourceFile;
+        }
+      }
+
+      return Array.from(map.values()).sort((left, right) => left.folder.localeCompare(right.folder));
+    }
+
+    function filteredRuns() {
+      return state.runs
+        .filter((run) => matchesSearch(run.folder, run.destination, run.status, run.sourceFile, run.startedAt, run.endedAt))
+        .filter((run) => state.status === "all" || run.status === state.status)
+        .slice()
+        .sort((left, right) => toEpoch(right.endedAt || right.startedAt) - toEpoch(left.endedAt || left.startedAt));
+    }
+
+    function filteredEvents() {
+      return state.events
+        .filter((event) => matchesSearch(event.folder, event.details, event.timestamp, event.raw, event.kind))
+        .filter((event) => state.status === "all" || statusBucket(event.kind) === state.status)
+        .slice()
+        .sort((left, right) => right.sortKey - left.sortKey);
+    }
+
+    function render() {
+      const runs = filteredRuns();
+      const events = filteredEvents();
+      const summary = summarizeRuns(runs);
+      const totalSuccess = runs.filter((run) => run.status === "success").length;
+      const totalFailed = runs.filter((run) => run.status === "failed").length;
+      const totalUnknown = runs.filter((run) => run.status === "unknown").length;
+      const copiedTotal = events.filter((event) => event.kind === "copied").length;
+      const latest = runs[0] ? formatDisplayTimestamp(runs[0].endedAt || runs[0].startedAt) : "--";
+
+      elements.jobCount.textContent = summary.length;
+      elements.successCount.textContent = totalSuccess;
+      elements.failedCount.textContent = totalFailed;
+      elements.copiedCount.textContent = copiedTotal;
+      elements.lineCount.textContent = events.length;
+      elements.latestRun.textContent = latest;
+
+      setVisibleSection();
+      renderJobTable(summary);
+      renderActivityTable(events);
+      renderCharts(summary, runs);
+    }
+
+    function setVisibleSection() {
+      const showSummary = state.view === "jobs";
+      elements.summarySection.classList.toggle("section-hidden", !showSummary);
+      elements.summaryTableSection.classList.toggle("section-hidden", !showSummary);
+      elements.activitySection.classList.toggle("section-hidden", state.view !== "activity");
+    }
+
+    function renderJobTable(summary) {
+      if (summary.length === 0) {
+        elements.jobTableBody.innerHTML = '<tr><td colspan="6" class="empty">No folder runs match the current filters.</td></tr>';
+        return;
+      }
+
+      elements.jobTableBody.innerHTML = summary.map((row) => `
+        <tr>
+          <td class="path"><strong>${escapeHtml(row.folder)}</strong><span>${escapeHtml(row.sourceFile || "")}</span></td>
+          <td class="muted">${escapeHtml(row.destination)}</td>
+          <td>${row.success}</td>
+          <td>${row.failed}</td>
+          <td>${escapeHtml(formatDisplayTimestamp(row.latest))}</td>
+          <td><span class="level ${escapeHtml(statusBucket(row.status))}"><span class="dot"></span>${escapeHtml(row.status.toUpperCase())}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderActivityTable(events) {
+      if (events.length === 0) {
+        elements.activityTableBody.innerHTML = '<tr><td colspan="4" class="empty">No activity matches the current filters.</td></tr>';
+        return;
+      }
+
+      elements.activityTableBody.innerHTML = events.map((event) => `
+        <tr>
+          <td>${escapeHtml(formatDisplayTimestamp(event.timestamp))}</td>
+          <td><span class="level ${escapeHtml(activityClass(event.kind))}"><span class="dot"></span>${escapeHtml(event.kind.toUpperCase())}</span></td>
+          <td class="path">${escapeHtml(event.folder || "-")}</td>
+          <td>${escapeHtml(event.details)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function activityClass(kind) {
+      if (kind === "success") return "success";
+      if (kind === "failed") return "failed";
+      if (kind === "unknown" || kind === "warn") return "unknown";
+      return "info";
+    }
+
+    function renderCharts(summary, runs) {
+      const successTotal = runs.filter((run) => run.status === "success").length;
+      const failedTotal = runs.filter((run) => run.status === "failed").length;
+      const unknownTotal = runs.filter((run) => run.status === "unknown").length;
+
+      const folderLabels = summary.slice(0, 12).map((row) => row.folder);
+      const successData = summary.slice(0, 12).map((row) => row.success);
+      const failedData = summary.slice(0, 12).map((row) => row.failed);
+
+      const statusCtx = document.getElementById("statusChart").getContext("2d");
+      const folderCtx = document.getElementById("folderChart").getContext("2d");
+
+      if (statusChart) statusChart.destroy();
+      if (folderChart) folderChart.destroy();
+
+      statusChart = new Chart(statusCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Success", "Failed", "Unknown"],
+          datasets: [{
+            data: [successTotal, failedTotal, unknownTotal],
+            backgroundColor: ["#34d399", "#fb7185", "#fbbf24"],
+            borderColor: "rgba(15, 23, 42, 0.9)",
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { color: "#e5eefc" },
+            },
+          },
+        },
+      });
+
+      folderChart = new Chart(folderCtx, {
+        type: "bar",
+        data: {
+          labels: folderLabels,
+          datasets: [
+            {
+              label: "Success",
+              data: successData,
+              backgroundColor: "rgba(52, 211, 153, 0.78)",
+            },
+            {
+              label: "Failed",
+              data: failedData,
+              backgroundColor: "rgba(251, 113, 133, 0.82)",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: "y",
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { color: "#cbd5e1" },
+              grid: { color: "rgba(148, 163, 184, 0.12)" },
+            },
+            y: {
+              stacked: true,
+              ticks: { color: "#cbd5e1" },
+              grid: { color: "rgba(148, 163, 184, 0.08)" },
+            },
+          },
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { color: "#e5eefc" },
+            },
+          },
+        },
+      });
+    }
+
+    function exportCsv() {
+      const rows = summarizeRuns(filteredRuns()).map((row) => ({
+        folder: row.folder,
+        destination: row.destination,
+        success: row.success,
+        failed: row.failed,
+        latestRun: row.latest,
+        status: row.status,
+      }));
+      downloadBlob(toCsv(rows), "text/csv;charset=utf-8;", `rclone-folder-summary-${timestampSuffix()}.csv`);
+    }
+
+    function exportJson() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        selectedDate: state.selectedDate || "all",
+        folderCount: summarizeRuns(filteredRuns()).length,
+        runs: filteredRuns(),
+        summary: summarizeRuns(filteredRuns()),
+        events: filteredEvents(),
+      };
+      downloadBlob(JSON.stringify(payload, null, 2), "application/json;charset=utf-8;", `rclone-dashboard-${timestampSuffix()}.json`);
+    }
+
+    async function exportPdf() {
+      const jsPDF = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPDF || !window.jspdf) {
+        alert("PDF export needs the jsPDF library to load.");
+        return;
+      }
+
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      const summary = summarizeRuns(filteredRuns());
+      const runs = filteredRuns();
+      const events = filteredEvents().slice(0, 24);
+      const width = doc.internal.pageSize.getWidth();
+      const height = doc.internal.pageSize.getHeight();
+      const pageTitle = "Rclone Backup Dashboard";
+
+      addPdfHeader(doc, pageTitle, `Folder: ${state.folderName || "not loaded"}  |  Date: ${state.selectedDate || "all available"}`);
+
+      const metrics = [
+        ["Folders", String(summary.length), [8, 18, 38]],
+        ["Success", String(runs.filter((run) => run.status === "success").length), [52, 211, 153]],
+        ["Failed", String(runs.filter((run) => run.status === "failed").length), [251, 113, 133]],
+        ["Copied", String(filteredEvents().filter((event) => event.kind === "copied").length), [125, 211, 252]],
+      ];
+
+      renderPdfMetrics(doc, metrics, 36, 92, width - 72);
+
+      const statusCanvas = document.getElementById("statusChart");
+      const folderCanvas = document.getElementById("folderChart");
+      if (statusCanvas) {
+        doc.addImage(statusCanvas.toDataURL("image/png", 1.0), "PNG", 36, 170, 220, 156);
+      }
+      if (folderCanvas) {
+        doc.addImage(folderCanvas.toDataURL("image/png", 1.0), "PNG", 282, 170, 470, 156);
+      }
+
+      doc.autoTable({
+        startY: 348,
+        head: [["Folder", "Destination", "Success", "Failed", "Latest run", "Status"]],
+        body: summary.map((row) => [row.folder, row.destination, row.success, row.failed, row.latest, String(row.status).toUpperCase()]),
+        theme: "grid",
+        styles: { fontSize: 8, cellPadding: 4, textColor: [15, 23, 42] },
+        headStyles: { fillColor: [8, 18, 38], textColor: [229, 238, 252], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [241, 245, 249] },
+        columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } },
+        margin: { left: 36, right: 36 },
+        didDrawPage: (data) => addPdfFooter(doc, data, height),
+      });
+
+      const nextY = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 348) + 22;
+      doc.autoTable({
+        startY: nextY,
+        head: [["Timestamp", "Type", "Folder", "Details"]],
+        body: events.map((event) => [event.timestamp || "--", String(event.kind).toUpperCase(), event.folder || "-", event.details]),
+        theme: "grid",
+        styles: { fontSize: 7, cellPadding: 3, textColor: [15, 23, 42] },
+        headStyles: { fillColor: [30, 41, 59], textColor: [229, 238, 252], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 36, right: 36 },
+        didDrawPage: (data) => addPdfFooter(doc, data, height),
+      });
+
+      doc.save(`rclone-dashboard-${timestampSuffix()}.pdf`);
+    }
+
+    function addPdfHeader(doc, title, subtitle) {
+      const width = doc.internal.pageSize.getWidth();
+      doc.setFillColor(8, 18, 38);
+      doc.rect(0, 0, width, 72, "F");
+      doc.setTextColor(229, 238, 252);
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, 36, 34);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(148, 163, 184);
+      doc.text(subtitle, 36, 54);
+    }
+
+    function renderPdfMetrics(doc, metrics, startX, y, availableWidth) {
+      const gap = 14;
+      const cardWidth = Math.floor((availableWidth - gap * (metrics.length - 1)) / metrics.length);
+      metrics.forEach(([label, value, color], index) => {
+        const x = startX + index * (cardWidth + gap);
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.roundedRect(x, y, cardWidth, 56, 10, 10, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.text(label.toUpperCase(), x + 12, y + 18);
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text(value, x + 12, y + 40);
+        doc.setFont("helvetica", "normal");
+      });
+    }
+
+    function addPdfFooter(doc, data, height) {
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(36, height - 30, pageWidth - 36, height - 30);
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(9);
+      doc.text(`Page ${pageNumber}`, pageWidth - 72, height - 16);
+      doc.text(`Generated ${new Date().toLocaleString()}`, 36, height - 16);
+    }
+
+    function toCsv(rows) {
+      if (rows.length === 0) return "";
+      const headers = Object.keys(rows[0]);
+      const lines = [headers.join(",")];
+      for (const row of rows) {
+        lines.push(headers.map((key) => csvCell(row[key])).join(","));
+      }
+      return lines.join("\r\n");
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "").replace(/"/g, '""');
+      return `"${text}"`;
+    }
+
+    function downloadBlob(content, mimeType, fileName) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function timestampSuffix() {
+      return new Date().toISOString().replace(/[:.]/g, "-");
+    }
+
+    function setStatus(message) {
+      elements.folderStatus.textContent = message;
+    }
+
+    async function ensurePermission(handle, requestIfNeeded) {
+      const options = { mode: "read" };
+      if ((await handle.queryPermission(options)) === "granted") {
+        return true;
+      }
+
+      if (!requestIfNeeded) {
+        return false;
+      }
+
+      return (await handle.requestPermission(options)) === "granted";
+    }
+
+    async function storeDirectoryHandle(handle) {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction("settings", "readwrite");
+        transaction.objectStore("settings").put(handle, "directoryHandle");
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error || new Error("Unable to store folder handle"));
+      });
+    }
+
+    async function getStoredDirectoryHandle() {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction("settings", "readonly");
+        const request = transaction.objectStore("settings").get("directoryHandle");
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error || new Error("Unable to read stored folder handle"));
+      });
+    }
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("rclone-dashboard", 1);
+
+        request.onupgradeneeded = () => {
+          request.result.createObjectStore("settings");
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Unable to open dashboard storage"));
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+  </script>
+</body>
+</html>

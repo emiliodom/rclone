@@ -1,53 +1,47 @@
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 
-:: Define the paths for your rclone program, filter file, and log file
-set RCLONE="C:\rclone\rclone.exe"
-set FILTER="C:\rclone\filters.txt"
-set LOG="C:\rclone\rclone-log.txt"
+:: Define the paths for your rclone program, filter file, and log directory
+set "RCLONE=C:\rclone\rclone.exe"
+set "FILTER=C:\rclone\filters.txt"
+set "LOG_DIR=C:\rclone\logs"
 
-:: 1. Backup Documents
-%RCLONE% copy "C:\Users\HP Pro Book\Documents" Gdrive:DocumentsBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
+if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
-:: 2. Backup Pictures
-%RCLONE% copy "C:\Users\HP Pro Book\Pictures" Gdrive:PicturesBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "LOG_DATE=%%I"
+set "LOG=%LOG_DIR%\rclone-log-%LOG_DATE%.txt"
 
-:: 3. Backup Music
-%RCLONE% copy "C:\Users\HP Pro Book\Music" Gdrive:MusicBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 4. Backup Videos
-%RCLONE% copy "C:\Users\HP Pro Book\Videos" Gdrive:VideosBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 5. Backup Downloads
-%RCLONE% copy "C:\Users\HP Pro Book\Downloads" Gdrive:DownloadsBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 6. Backup C: Drive Desktop
-%RCLONE% copy "C:\Users\HP Pro Book\Desktop" Gdrive:DesktopBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 7. Backup F: Drive Desktop
-%RCLONE% copy "F:\Desktop" Gdrive:F_DesktopBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 8. Backup F: Drive Desktop - French
-%RCLONE% copy "F:\Desktop\French" Gdrive:F_FrenchBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 9. Backup F: Drive Desktop - Marleny
-%RCLONE% copy "F:\Desktop\Marleny" Gdrive:F_MarlenyBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 10. Backup F: Drive Desktop - Parasol
-%RCLONE% copy "F:\Desktop\Parasol" Gdrive:F_ParasolBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 11. Backup F: Drive Desktop - Visa
-%RCLONE% copy "F:\Desktop\Visa" Gdrive:F_VisaBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 12. Backup F: Drive Desktop - yaman
-%RCLONE% copy "F:\Desktop\yaman" Gdrive:F_yamanBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 13. Backup F: Drive Docs
-%RCLONE% copy "F:\Docs" Gdrive:F_DocsBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 14. Backup F: Drive Downloads
-%RCLONE% copy "F:\Downloads" Gdrive:F_DownloadsBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
-
-:: 15. Backup F: Drive utorrent
-%RCLONE% copy "F:\utorrent" Gdrive:F_utorrentBackup -u --filter-from %FILTER% --log-file %LOG% --log-level INFO
+call :run_backup "Documents" "C:\Users\HP Pro Book\Documents" "Gdrive:DocumentsBackup"
+call :run_backup "Pictures" "C:\Users\HP Pro Book\Pictures" "Gdrive:PicturesBackup"
+call :run_backup "Music" "C:\Users\HP Pro Book\Music" "Gdrive:MusicBackup"
+call :run_backup "Videos" "C:\Users\HP Pro Book\Videos" "Gdrive:VideosBackup"
+call :run_backup "Downloads" "C:\Users\HP Pro Book\Downloads" "Gdrive:DownloadsBackup"
+call :run_backup "Desktop" "C:\Users\HP Pro Book\Desktop" "Gdrive:DesktopBackup"
+call :run_backup "F Desktop" "F:\Desktop" "Gdrive:F_DesktopBackup"
+call :run_backup "F Desktop - French" "F:\Desktop\French" "Gdrive:F_FrenchBackup"
+call :run_backup "F Desktop - Marleny" "F:\Desktop\Marleny" "Gdrive:F_MarlenyBackup"
+call :run_backup "F Desktop - Parasol" "F:\Desktop\Parasol" "Gdrive:F_ParasolBackup"
+call :run_backup "F Desktop - Visa" "F:\Desktop\Visa" "Gdrive:F_VisaBackup"
+call :run_backup "F Desktop - yaman" "F:\Desktop\yaman" "Gdrive:F_yamanBackup"
+call :run_backup "F Docs" "F:\Docs" "Gdrive:F_DocsBackup"
+call :run_backup "F Downloads" "F:\Downloads" "Gdrive:F_DownloadsBackup"
+call :run_backup "F utorrent" "F:\utorrent" "Gdrive:F_utorrentBackup"
 
 exit
+
+:run_backup
+set "JOB_NAME=%~1"
+set "SOURCE=%~2"
+set "DEST=%~3"
+
+>>"%LOG%" echo ==== [%DATE% %TIME%] START !JOB_NAME! ^> !DEST! ====
+"%RCLONE%" copy "%SOURCE%" "%DEST%" -u --filter-from "%FILTER%" --log-file "%LOG%" --log-level INFO
+set "EXIT_CODE=%ERRORLEVEL%"
+
+if "%EXIT_CODE%"=="0" (
+	>>"%LOG%" echo ==== [%DATE% %TIME%] END !JOB_NAME! SUCCESS ====
+) else (
+	>>"%LOG%" echo ==== [%DATE% %TIME%] END !JOB_NAME! FAILED (exit !EXIT_CODE!) ====
+)
+
+exit /b %EXIT_CODE%
