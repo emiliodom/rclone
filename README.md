@@ -7,8 +7,9 @@ This folder contains a Windows batch script that runs a set of `rclone copy` job
 - Uses `bk.bat` to copy selected folders from this PC and the `F:` drive to a Google Drive remote named `Gdrive:`.
 - Uses `filters.txt` to exclude cache, build, system, and other unwanted folders.
 - Writes transfer details to daily log files under `logs\` with explicit start and end markers for each backup folder.
-- Includes a local HTML dashboard in `index.html` for loading the whole `logs\` folder, not a single file.
-- The dashboard remembers the last folder when permissions allow, defaults to the newest log date, and shows per-folder success and failure counts, recent activity, charts, and export buttons for CSV, JSON, and PDF.
+- Includes a local HTML dashboard in `index.html` for loading either the whole `logs\` folder or a single `rclone-log.txt` file.
+- The dashboard remembers the last source when permissions allow, defaults to the newest log date, and switches between folder mode and flat-log mode automatically.
+- In flat-log mode it derives pills, filters, charts, and summaries from the raw log content, then exports the current view to CSV, JSON, or PDF.
 
 ## Requirements
 
@@ -22,7 +23,8 @@ This folder contains a Windows batch script that runs a set of `rclone copy` job
 - `bk.bat` - runs the backup jobs.
 - `filters.txt` - shared filter rules used by every copy job.
 - `logs\rclone-log-YYYY-MM-DD.txt` - daily log output written by the script.
-- `index.html` - local dashboard for loading and reviewing a logs folder.
+- `rclone-log.txt` - flat log source that the dashboard can parse directly.
+- `index.html` - local dashboard for loading and reviewing a logs folder or a single log file.
 - `rclone.exe` - bundled rclone binary.
 - `README.txt` and `README.html` - rclone manual files bundled with the binary.
 
@@ -71,13 +73,14 @@ It also excludes localized Windows symlink folders such as `Mi música`, `Mis im
 1. Confirm the Google Drive remote exists and is named `Gdrive`.
 2. Review `filters.txt` if you need to add or remove exclusions.
 3. Run `bk.bat` from this folder.
-4. Open `index.html` in a Chromium-based browser and choose the `logs\` folder once.
+4. Open `index.html` in a Chromium-based browser and choose either the `logs\` folder or `rclone-log.txt`.
 5. Use the calendar selector to switch dates if you need an older log day.
-6. Use the export buttons if you want CSV, JSON, or PDF output.
+6. Use the derived pills to filter by content category or path group.
+7. Use the export buttons if you want CSV, JSON, or PDF output.
 
 ## Notes
 
 - The script uses `rclone copy`, so destination folders are updated with new or changed files but are not made identical to the source.
 - The batch file generates one log file per day using the current date.
-- The dashboard depends on the folder start/end markers written by `bk.bat` to calculate per-folder success and failure totals.
+- The dashboard can still calculate per-folder success and failure totals when valid start/end markers are present, but it falls back to flat-log parsing when they are not.
 - If you change source paths or the remote name, update `bk.bat` accordingly.

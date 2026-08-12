@@ -144,6 +144,39 @@
       width: fit-content;
     }
 
+    .pill-section {
+      display: grid;
+      gap: 10px;
+      margin: 0 0 16px;
+    }
+
+    .pill-section .section-title {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .pill-rail {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+      background: rgba(2, 6, 23, 0.44);
+      color: var(--text);
+      padding: 10px 14px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .pill.active {
+      background: linear-gradient(135deg, rgba(125, 211, 252, 0.24), rgba(52, 211, 153, 0.2));
+      border-color: rgba(125, 211, 252, 0.44);
+    }
+
     .status-dot {
       width: 9px;
       height: 9px;
@@ -374,12 +407,13 @@
     <section class="hero">
       <div class="hero-card card">
         <h1>Rclone Backup Dashboard</h1>
-        <p class="lede">Load a logs folder once and the dashboard remembers it. It groups runs by folder, defaults to the newest log date, and turns the raw text into charts and exports.</p>
+        <p class="lede">Load a logs folder or the single <span class="muted">C:\rclone\rclone-log.txt</span> file once and the dashboard remembers it. When folder markers are missing, it falls back to a flat log parser, derives pills from the content, and still powers charts and exports.</p>
       </div>
       <div class="hero-card card folder-picker">
         <div class="picker-actions">
           <button id="loadFolderButton" class="primary" type="button">Load logs folder</button>
-          <button id="reloadFolderButton" type="button">Reload last folder</button>
+          <button id="loadFileButton" type="button">Load log file</button>
+          <button id="reloadFolderButton" type="button">Reload last source</button>
         </div>
         <div class="calendar-line">
           <strong>Calendar selector</strong>
@@ -387,8 +421,13 @@
           <input id="dateInput" type="date" />
         </div>
         <div class="status-pill"><span class="status-dot"></span><span id="folderStatus">Waiting for a logs folder</span></div>
-        <div class="hint" id="folderHint">The last used logs folder will auto-load when the browser grants access again.</div>
+        <div class="hint" id="folderHint">The last used folder or file will auto-load when the browser grants access again.</div>
       </div>
+    </section>
+
+    <section class="pill-section">
+      <p class="section-title">Pills and filters derived from the log content</p>
+      <div id="pillRail" class="pill-rail"></div>
     </section>
 
     <section class="toolbar">
@@ -420,15 +459,15 @@
     <section id="summarySection" class="grid-2">
       <div class="chart-card panel">
         <div class="panel-header">
-          <h2>Run outcomes</h2>
-          <span>Success vs failed runs across all folders</span>
+          <h2 id="statusChartTitle">Run outcomes</h2>
+          <span id="statusChartSubtitle">Success vs failed runs across all folders</span>
         </div>
         <div class="chart-body"><canvas id="statusChart"></canvas></div>
       </div>
       <div class="chart-card panel">
         <div class="panel-header">
-          <h2>Folder performance</h2>
-          <span>Success and failure counts by backup folder</span>
+          <h2 id="folderChartTitle">Folder performance</h2>
+          <span id="folderChartSubtitle">Success and failure counts by backup folder</span>
         </div>
         <div class="chart-body"><canvas id="folderChart"></canvas></div>
       </div>
@@ -436,8 +475,8 @@
 
     <section id="summaryTableSection" class="panel" style="margin-bottom: 16px;">
       <div class="panel-header">
-        <h2>Folder summary</h2>
-        <span>One row per backup target</span>
+        <h2 id="summaryTitle">Folder summary</h2>
+        <span id="summarySubtitle">One row per backup target</span>
       </div>
       <div class="table-wrap">
         <table>
@@ -458,8 +497,8 @@
 
     <section id="activitySection" class="panel">
       <div class="panel-header">
-        <h2>Recent activity</h2>
-        <span>Parsed log lines and job markers</span>
+        <h2 id="activityTitle">Recent activity</h2>
+        <span id="activitySubtitle">Parsed log lines and job markers</span>
       </div>
       <div class="table-wrap">
         <table>
@@ -479,31 +518,40 @@
 
   <script>
     const STORAGE_KEYS = {
-      directoryHandle: "rclone.dashboard.directoryHandle",
+      source: "rclone.dashboard.source",
       selectedDate: "rclone.dashboard.selectedDate",
       search: "rclone.dashboard.search",
       status: "rclone.dashboard.status",
       view: "rclone.dashboard.view",
+      pill: "rclone.dashboard.pill",
     };
 
     const state = {
-      directoryHandle: null,
-      folderName: "",
-      logFiles: [],
-      selectedDate: "",
+      sourceKind: "none",
+      sourceName: "",
+      sourceHandle: null,
+      mode: "flat",
+      files: [],
       runs: [],
       events: [],
+      summaryRows: [],
+      availableDates: [],
+      pills: [],
+      selectedDate: "",
       search: "",
       status: "all",
       view: "jobs",
+      activePill: "all",
     };
 
     const elements = {
       loadFolderButton: document.getElementById("loadFolderButton"),
+      loadFileButton: document.getElementById("loadFileButton"),
       reloadFolderButton: document.getElementById("reloadFolderButton"),
       dateInput: document.getElementById("dateInput"),
       folderStatus: document.getElementById("folderStatus"),
       folderHint: document.getElementById("folderHint"),
+      pillRail: document.getElementById("pillRail"),
       searchInput: document.getElementById("searchInput"),
       statusFilter: document.getElementById("statusFilter"),
       viewFilter: document.getElementById("viewFilter"),
@@ -521,6 +569,17 @@
       summarySection: document.getElementById("summarySection"),
       summaryTableSection: document.getElementById("summaryTableSection"),
       activitySection: document.getElementById("activitySection"),
+      summaryTitle: document.getElementById("summaryTitle"),
+      summarySubtitle: document.getElementById("summarySubtitle"),
+      activityTitle: document.getElementById("activityTitle"),
+      activitySubtitle: document.getElementById("activitySubtitle"),
+      statusChartTitle: document.getElementById("statusChartTitle"),
+      statusChartSubtitle: document.getElementById("statusChartSubtitle"),
+      folderChartTitle: document.getElementById("folderChartTitle"),
+      folderChartSubtitle: document.getElementById("folderChartSubtitle"),
+      metricLabels: Array.from(document.querySelectorAll(".metrics .label")),
+      summaryHeaderRow: document.querySelector("#summaryTableSection thead tr"),
+      activityHeaderRow: document.querySelector("#activitySection thead tr"),
     };
 
     let statusChart = null;
@@ -534,11 +593,9 @@
 
     function bindEvents() {
       elements.loadFolderButton.addEventListener("click", chooseFolder);
-      elements.reloadFolderButton.addEventListener("click", reloadLastFolder);
-
-      for (const input of [elements.dateInput].filter(Boolean)) {
-        input.addEventListener("change", handleDateChange);
-      }
+      elements.loadFileButton.addEventListener("click", chooseFile);
+      elements.reloadFolderButton.addEventListener("click", reloadLastSource);
+      elements.dateInput.addEventListener("change", handleDateChange);
 
       elements.searchInput.addEventListener("input", () => {
         state.search = elements.searchInput.value.trim().toLowerCase();
@@ -561,11 +618,12 @@
       elements.csvExport.addEventListener("click", exportCsv);
       elements.jsonExport.addEventListener("click", exportJson);
       elements.pdfExport.addEventListener("click", exportPdf);
+      elements.pillRail.addEventListener("click", handlePillClick);
     }
 
     async function bootstrap() {
       restoreFilters();
-      await restoreStoredFolder();
+      await restoreStoredSource();
       render();
     }
 
@@ -573,6 +631,7 @@
       state.search = localStorage.getItem(STORAGE_KEYS.search) || "";
       state.status = localStorage.getItem(STORAGE_KEYS.status) || "all";
       state.view = localStorage.getItem(STORAGE_KEYS.view) || "jobs";
+      state.activePill = localStorage.getItem(STORAGE_KEYS.pill) || "all";
 
       elements.searchInput.value = state.search;
       elements.statusFilter.value = state.status;
@@ -580,28 +639,28 @@
     }
 
     function handleDateChange(event) {
-      const value = event.target.value || "";
-      state.selectedDate = value;
-      syncDateInputs(value);
-      localStorage.setItem(STORAGE_KEYS.selectedDate, value);
-      refreshParsedData();
+      state.selectedDate = event.target.value || "";
+      localStorage.setItem(STORAGE_KEYS.selectedDate, state.selectedDate);
+      render();
     }
 
-    function syncDateInputs(value) {
-      for (const input of [elements.dateInput].filter(Boolean)) {
-        if (input.value !== value) input.value = value;
-      }
+    function handlePillClick(event) {
+      const button = event.target.closest("button[data-pill]");
+      if (!button) return;
+      state.activePill = button.dataset.pill;
+      localStorage.setItem(STORAGE_KEYS.pill, state.activePill);
+      render();
     }
 
     async function chooseFolder() {
       if (!window.showDirectoryPicker) {
-        setStatus("This browser cannot open a logs folder picker.");
+        setStatus("This browser cannot open a folder picker.");
         return;
       }
 
       try {
         const handle = await window.showDirectoryPicker({ mode: "read" });
-        await loadDirectory(handle, true);
+        await loadSource({ kind: "folder", handle }, true);
       } catch (error) {
         if (error && error.name !== "AbortError") {
           setStatus(`Folder load failed: ${error.message || error}`);
@@ -609,84 +668,134 @@
       }
     }
 
-    async function reloadLastFolder() {
-      if (state.directoryHandle) {
-        await loadDirectory(state.directoryHandle, false);
+    async function chooseFile() {
+      if (!window.showOpenFilePicker) {
+        setStatus("This browser cannot open a file picker.");
         return;
       }
 
-      await restoreStoredFolder();
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{ description: "Rclone logs", accept: { "text/plain": [".txt", ".log"] } }],
+        });
+        if (handle) {
+          await loadSource({ kind: "file", handle }, true);
+        }
+      } catch (error) {
+        if (error && error.name !== "AbortError") {
+          setStatus(`File load failed: ${error.message || error}`);
+        }
+      }
+    }
+
+    async function reloadLastSource() {
+      if (state.files.length) {
+        await loadFromFiles(state.sourceKind, state.sourceName, state.files, false);
+        return;
+      }
+
+      await restoreStoredSource();
       render();
     }
 
-    async function restoreStoredFolder() {
-      const handle = await getStoredDirectoryHandle();
-      if (!handle) {
+    async function restoreStoredSource() {
+      const stored = await getStoredSourceSnapshot();
+      if (!stored) {
         setIdleState();
         return;
       }
 
-      if (!(await ensurePermission(handle, false))) {
-        setStatus("Last folder is saved, but permission is not available yet.");
-        setIdleState();
-        return;
-      }
-
-      await loadDirectory(handle, false);
+      await loadFromFiles(stored.kind, stored.name, stored.files || [], false, stored.selectedDate || "");
     }
 
-    async function loadDirectory(handle, persistHandle) {
-      if (!(await ensurePermission(handle, true))) {
-        setStatus("Permission to read that folder was not granted.");
+    async function loadSource(source, persistSource) {
+      if (!(await ensurePermission(source.handle, true))) {
+        setStatus("Permission to read that source was not granted.");
         return;
       }
 
-      state.directoryHandle = handle;
-      state.folderName = handle.name || "logs";
+      state.sourceKind = source.kind;
+      state.sourceHandle = source.handle;
+      state.sourceName = source.handle.name || (source.kind === "folder" ? "logs" : "rclone-log.txt");
 
-      if (persistHandle) {
-        await storeDirectoryHandle(handle);
-      }
-
-      const files = await collectLogFiles(handle);
+      const files = source.kind === "folder" ? await collectLogFiles(source.handle) : [await readFileHandle(source.handle)];
       if (files.length === 0) {
-        state.logFiles = [];
-        state.runs = [];
-        state.events = [];
-        state.selectedDate = "";
-        syncDateInputs("");
-        setStatus(`No .txt or .log files found in ${state.folderName}`);
-        elements.folderHint.textContent = `Loaded folder ${state.folderName}, but it did not contain any log files.`;
+        resetSourceState();
+        setStatus(`No .txt or .log files found in ${state.sourceName}`);
+        elements.folderHint.textContent = `Loaded ${state.sourceName}, but it did not contain any log files.`;
         render();
         return;
       }
 
-      state.logFiles = files.sort((left, right) => right.dateKey - left.dateKey || right.name.localeCompare(left.name));
+      await loadFromFiles(source.kind, state.sourceName, files, persistSource);
+    }
 
-      const availableDates = getAvailableDates(state.logFiles);
-      const storedDate = localStorage.getItem(STORAGE_KEYS.selectedDate) || "";
-      state.selectedDate = availableDates.includes(storedDate) ? storedDate : availableDates[0] || "";
-      syncDateInputs(state.selectedDate);
-      updateDateBounds(availableDates);
-      await refreshParsedData();
+    async function loadFromFiles(sourceKind, sourceName, files, persistSource, restoredDate = "") {
+      state.sourceKind = sourceKind;
+      state.sourceName = sourceName;
+      state.sourceHandle = null;
 
-      const loadedLabel = state.selectedDate || "all available dates";
-      setStatus(`Loaded ${files.length} log file${files.length === 1 ? "" : "s"} from ${state.folderName}`);
-      elements.folderHint.textContent = `Auto-loaded ${loadedLabel} from ${state.folderName}.`;
+      const parsed = parseSource(files, sourceKind);
+      state.files = files;
+      state.mode = parsed.mode;
+      state.runs = parsed.runs;
+      state.events = parsed.events;
+      state.summaryRows = parsed.summaryRows;
+      state.pills = parsed.pills;
+      state.availableDates = parsed.availableDates;
+
+      const storedDate = restoredDate || localStorage.getItem(STORAGE_KEYS.selectedDate) || "";
+      state.selectedDate = parsed.availableDates.includes(storedDate) ? storedDate : parsed.availableDates[0] || "";
+      elements.dateInput.value = state.selectedDate;
+      updateDateBounds(parsed.availableDates);
+
+      if (persistSource && sourceKind === "folder") {
+        try {
+          await storeSourceSnapshot({
+            kind: sourceKind,
+            name: sourceName,
+            files,
+            selectedDate: state.selectedDate,
+          });
+        } catch (error) {
+          void error;
+        }
+      }
+
+      const loadedLabel = sourceKind === "folder" ? `folder ${state.sourceName}` : `file ${state.sourceName}`;
+      setStatus(`Loaded ${files.length} log file${files.length === 1 ? "" : "s"} from ${loadedLabel}`);
+      elements.folderHint.textContent = state.mode === "folder"
+        ? `Folder markers were found in ${state.sourceName}; the dashboard is using folder mode.`
+        : `No reliable folder markers were found in ${state.sourceName}; the dashboard is using flat-log mode and deriving pills from the raw content.`;
       render();
     }
 
+    function resetSourceState() {
+      state.mode = "flat";
+      state.files = [];
+      state.runs = [];
+      state.events = [];
+      state.summaryRows = [];
+      state.pills = [];
+      state.availableDates = [];
+      state.selectedDate = "";
+      elements.dateInput.value = "";
+      updateDateBounds([]);
+    }
+
     function setIdleState() {
-      elements.folderHint.textContent = "Pick a logs folder once. The dashboard will remember it and reload it on the next visit.";
-      if (!state.directoryHandle) {
-        setStatus("Waiting for a logs folder");
-      }
+      resetSourceState();
+      setStatus("Waiting for a logs folder or rclone-log.txt file");
+      elements.folderHint.textContent = "Load a folder or a single log file once. The dashboard will remember the last source when the browser permits it.";
     }
 
     function updateDateBounds(availableDates) {
-      for (const input of [elements.dateInput].filter(Boolean)) {
-        input.min = availableDates[availableDates.length - 1] || "";
-        input.max = availableDates[0] || "";
+      elements.dateInput.min = availableDates[availableDates.length - 1] || "";
+      elements.dateInput.max = availableDates[0] || "";
+      if (availableDates.length === 0) {
+        elements.dateInput.removeAttribute("min");
+        elements.dateInput.removeAttribute("max");
       }
     }
 
@@ -716,6 +825,17 @@
       return results;
     }
 
+    async function readFileHandle(handle) {
+      const file = await handle.getFile();
+      return {
+        name: file.name,
+        path: file.name,
+        text: await file.text(),
+        date: extractFileDate(file.name, file.lastModified),
+        dateKey: extractDateKey(file.name, file.lastModified),
+      };
+    }
+
     function extractFileDate(name, lastModified) {
       const fromName = String(name).match(/(\d{4}-\d{2}-\d{2})/);
       if (fromName) {
@@ -729,29 +849,65 @@
       return Date.parse(`${extractFileDate(name, lastModified)}T00:00:00`);
     }
 
-    function getAvailableDates(files) {
-      return Array.from(new Set(files.map((file) => file.date))).sort((left, right) => right.localeCompare(left));
-    }
-
-    async function refreshParsedData() {
-      const activeFiles = state.selectedDate ? state.logFiles.filter((file) => file.date === state.selectedDate) : state.logFiles;
-      const parsed = parseFiles(activeFiles);
-      state.runs = parsed.runs;
-      state.events = parsed.events;
-      render();
-    }
-
-    function parseFiles(files) {
-      const runs = [];
-      const events = [];
+    function parseSource(files, sourceKind) {
+      const flatEvents = [];
+      const availableDates = new Set();
+      let validMarkerCount = 0;
 
       for (const file of files) {
         const lines = file.text.split(/\r?\n/);
-        let activeRun = null;
 
         for (const rawLine of lines) {
           const line = rawLine.trim();
           if (!line) continue;
+
+          const event = parseFlatLine(line, file);
+          if (event) {
+            flatEvents.push(event);
+            if (event.date) availableDates.add(event.date);
+          }
+
+          if (isValidMarkerLine(line)) {
+            validMarkerCount += 1;
+          }
+        }
+
+        availableDates.add(file.date);
+      }
+
+      const folderMode = sourceKind === "folder" && validMarkerCount >= 4;
+      const runs = folderMode ? parseFolderRuns(files) : [];
+      const events = folderMode ? flatEvents : flatEvents.filter((event) => event.category !== "marker");
+      const summaryRows = folderMode ? summarizeFolderRuns(runs) : buildFlatSummaryRows(events);
+      const pills = buildPills(folderMode, summaryRows, events, runs);
+      const dates = Array.from(availableDates).filter(Boolean).sort((left, right) => right.localeCompare(left));
+
+      return {
+        mode: folderMode ? "folder" : "flat",
+        events,
+        runs,
+        summaryRows,
+        pills,
+        availableDates: dates,
+      };
+    }
+
+    function isValidMarkerLine(line) {
+      if (!line.startsWith("==== [")) return false;
+      if (line.includes("!JOB_NAME!")) return false;
+      return /==== \[.+?\] (START|END) .+? ====$/.test(line);
+    }
+
+    function parseFolderRuns(files) {
+      const runs = [];
+      let activeRun = null;
+
+      for (const file of files) {
+        const lines = file.text.split(/\r?\n/);
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line || !isValidMarkerLine(line)) continue;
 
           const startMatch = line.match(/^==== \[(.+?)\] START (.+?) > (.+?) ====$/);
           if (startMatch) {
@@ -764,92 +920,101 @@
               status: "unknown",
               copiedFiles: 0,
             };
-
             runs.push(activeRun);
-            events.push({
-              timestamp: startMatch[1],
-              kind: "start",
-              folder: startMatch[2],
-              details: `Started backup to ${startMatch[3]}`,
-              raw: line,
-              sortKey: toEpoch(startMatch[1]),
-            });
             continue;
           }
 
           const endMatch = line.match(/^==== \[(.+?)\] END (.+?) (SUCCESS|FAILED)(?: \(exit (\d+)\))? ====$/);
-          if (endMatch) {
-            const status = endMatch[3].toLowerCase();
-
-            if (activeRun && activeRun.folder === endMatch[2]) {
-              activeRun.endedAt = endMatch[1];
-              activeRun.status = status;
-            }
-
-            events.push({
-              timestamp: endMatch[1],
-              kind: status,
-              folder: endMatch[2],
-              details: status === "success" ? "Backup completed successfully" : `Backup failed${endMatch[4] ? ` with exit code ${endMatch[4]}` : ""}`,
-              raw: line,
-              sortKey: toEpoch(endMatch[1]),
-            });
+          if (endMatch && activeRun && activeRun.folder === endMatch[2]) {
+            activeRun.endedAt = endMatch[1];
+            activeRun.status = endMatch[3].toLowerCase();
             activeRun = null;
-            continue;
           }
-
-          const logMatch = line.match(/^(\d{4}[/-]\d{2}[/-]\d{2} \d{2}:\d{2}:\d{2})\s+([A-Z]+)\s*: ?(.*)$/);
-          if (logMatch) {
-            const level = normalizeLevel(logMatch[2]);
-            const message = logMatch[3].trim();
-            const detail = splitPathAndMessage(message);
-            const isCopied = /\bCopied\b/i.test(message);
-
-            if (activeRun && isCopied) {
-              activeRun.copiedFiles += 1;
-            }
-
-            events.push({
-              timestamp: logMatch[1],
-              kind: isCopied ? "copied" : level,
-              folder: activeRun ? activeRun.folder : "",
-              details: detail.path ? `${detail.path} - ${detail.message}` : detail.message,
-              raw: line,
-              sortKey: toEpoch(logMatch[1]),
-            });
-            continue;
-          }
-
-          events.push({
-            timestamp: "",
-            kind: activeRun ? "info" : "unknown",
-            folder: activeRun ? activeRun.folder : "",
-            details: line,
-            raw: line,
-            sortKey: 0,
-          });
-        }
-
-        if (activeRun && activeRun.status === "unknown") {
-          activeRun.status = "failed";
         }
       }
 
-      return { runs, events };
+      return runs;
     }
 
-    function normalizeLevel(level) {
-      const value = String(level || "").toLowerCase();
-      if (value.includes("err")) return "failed";
-      if (value.includes("warn")) return "unknown";
-      if (value.includes("notice")) return "info";
+    function parseFlatLine(line, file) {
+      if (line.startsWith("==== [") && !line.includes("!JOB_NAME!")) {
+        return {
+          timestamp: "",
+          date: file.date,
+          level: "info",
+          category: "marker",
+          path: "",
+          prefix: "",
+          message: line,
+          raw: line,
+          sortKey: 0,
+        };
+      }
+
+      const match = line.match(/^(\d{4}[\/\-]\d{2}[\/\-]\d{2} \d{2}:\d{2}:\d{2})\s+([A-Z]+)\s*: ?(.*)$/);
+      if (!match) return null;
+
+      const timestamp = match[1];
+      const level = normalizeLevel(match[2]);
+      const message = match[3].trim();
+      const detail = splitPathAndMessage(message);
+      const category = classifyFlatEvent(level, message, detail.path);
+      const date = extractDateFromTimestamp(timestamp) || file.date;
+      const prefix = extractTopPrefix(detail.path);
+
+      return {
+        timestamp,
+        date,
+        level,
+        category,
+        path: detail.path,
+        prefix,
+        message: detail.message,
+        raw: line,
+        sortKey: toEpoch(timestamp),
+      };
+    }
+
+    function classifyFlatEvent(level, message, path) {
+      const text = String(message || "");
+      if (/Copied \((new|replaced existing)\)/i.test(text) || /Copied$/i.test(text)) return "copied";
+      if (/Set directory modification time/i.test(text)) return "modtime";
+      if (/^Transferred:/i.test(text)) return "transfer";
+      if (/^Checks:/i.test(text)) return "checks";
+      if (/There was nothing to transfer/i.test(text)) return "idle";
+      if (/Can't follow symlink/i.test(text) || level === "notice") return "notice";
+      if (/ERROR|FAILED|failed/i.test(text) || level === "error" || level === "failed") return "error";
+      if (path && /\.git\/|\/\.git\//.test(path)) return "git";
       return "info";
+    }
+
+    function extractDateFromTimestamp(timestamp) {
+      const match = String(timestamp).match(/^(\d{4}[\/\-]\d{2}[\/\-]\d{2})/);
+      return match ? match[1].replace(/\//g, "-") : "";
     }
 
     function splitPathAndMessage(message) {
       const match = message.match(/^(.*?):\s+(.*)$/);
-      if (!match) return { path: "", message };
+      if (!match) {
+        return { path: "", message };
+      }
+
       return { path: match[1].trim(), message: match[2].trim() };
+    }
+
+    function extractTopPrefix(path) {
+      const cleaned = String(path || "").replace(/^\/+/, "");
+      if (!cleaned) return "";
+      const slashIndex = cleaned.indexOf("/");
+      return slashIndex === -1 ? cleaned : cleaned.slice(0, slashIndex);
+    }
+
+    function normalizeLevel(level) {
+      const value = String(level || "").toLowerCase();
+      if (value.includes("err")) return "error";
+      if (value.includes("warn")) return "warn";
+      if (value.includes("notice")) return "notice";
+      return "info";
     }
 
     function toEpoch(value) {
@@ -857,29 +1022,51 @@
       return Number.isNaN(parsed) ? 0 : parsed;
     }
 
-    function formatDisplayTimestamp(value) {
-      return value || "--";
-    }
-
     function matchesSearch(...values) {
       if (!state.search) return true;
       return values.some((value) => String(value || "").toLowerCase().includes(state.search));
     }
 
-    function statusBucket(kind) {
-      if (kind === "success") return "success";
-      if (kind === "failed") return "failed";
-      if (kind === "unknown" || kind === "warn") return "unknown";
-      return "info";
+    function matchesStatus(item) {
+      if (state.status === "all") return true;
+      if (state.mode === "folder") {
+        return String(item.status || "").toLowerCase() === state.status;
+      }
+
+      return String(item.category || "").toLowerCase() === state.status;
     }
 
-    function summarizeRuns(runs) {
+    function matchesDate(item) {
+      if (!state.selectedDate) return true;
+      return String(item.date || "").slice(0, 10) === state.selectedDate;
+    }
+
+    function matchesPill(item) {
+      if (state.activePill === "all") return true;
+
+      if (state.activePill.startsWith("cat:")) {
+        return item.category === state.activePill.slice(4);
+      }
+
+      if (state.activePill.startsWith("prefix:")) {
+        return item.prefix === state.activePill.slice(7);
+      }
+
+      if (state.activePill.startsWith("folder:")) {
+        return item.folder === state.activePill.slice(7);
+      }
+
+      return true;
+    }
+
+    function summarizeFolderRuns(runs) {
       const map = new Map();
 
       for (const run of runs) {
         const key = run.folder;
         if (!map.has(key)) {
           map.set(key, {
+            kind: "folder",
             folder: run.folder,
             destination: run.destination,
             sourceFile: run.sourceFile,
@@ -907,43 +1094,208 @@
       return Array.from(map.values()).sort((left, right) => left.folder.localeCompare(right.folder));
     }
 
-    function filteredRuns() {
-      return state.runs
-        .filter((run) => matchesSearch(run.folder, run.destination, run.status, run.sourceFile, run.startedAt, run.endedAt))
-        .filter((run) => state.status === "all" || run.status === state.status)
-        .slice()
-        .sort((left, right) => toEpoch(right.endedAt || right.startedAt) - toEpoch(left.endedAt || left.startedAt));
+    function buildFlatSummaryRows(events) {
+      const map = new Map();
+
+      for (const event of events) {
+        const key = event.category;
+        if (!map.has(key)) {
+          map.set(key, {
+            kind: "category",
+            category: event.category,
+            count: 0,
+            latest: event.timestamp || "",
+            examples: [],
+          });
+        }
+
+        const bucket = map.get(key);
+        bucket.count += 1;
+        if (event.timestamp && toEpoch(event.timestamp) >= toEpoch(bucket.latest)) {
+          bucket.latest = event.timestamp;
+        }
+        if (event.path && bucket.examples.length < 2) {
+          bucket.examples.push(event.path);
+        }
+      }
+
+      return Array.from(map.values()).sort((left, right) => right.count - left.count || left.category.localeCompare(right.category));
     }
 
-    function filteredEvents() {
-      return state.events
-        .filter((event) => matchesSearch(event.folder, event.details, event.timestamp, event.raw, event.kind))
-        .filter((event) => state.status === "all" || statusBucket(event.kind) === state.status)
+    function buildPills(folderMode, summaryRows, events, runs) {
+      const pills = [{ key: "all", label: "All", count: folderMode ? summaryRows.length : events.length, type: "all" }];
+
+      if (folderMode) {
+        for (const row of summaryRows.slice(0, 10)) {
+          pills.push({ key: `folder:${row.folder}`, label: row.folder, count: row.success + row.failed + row.unknown, type: "folder" });
+        }
+        return pills;
+      }
+
+      const categoryCounts = new Map();
+      const prefixCounts = new Map();
+
+      for (const event of events) {
+        categoryCounts.set(event.category, (categoryCounts.get(event.category) || 0) + 1);
+        if (event.prefix) {
+          prefixCounts.set(event.prefix, (prefixCounts.get(event.prefix) || 0) + 1);
+        }
+      }
+
+      const categoryOrder = ["copied", "modtime", "transfer", "checks", "notice", "idle", "error", "info", "git"];
+      for (const key of categoryOrder) {
+        if (categoryCounts.has(key)) {
+          pills.push({ key: `cat:${key}`, label: formatCategoryLabel(key), count: categoryCounts.get(key), type: "category" });
+        }
+      }
+
+      const sortedPrefixes = Array.from(prefixCounts.entries()).sort((left, right) => right[1] - left[1]).slice(0, 8);
+      for (const [prefix, count] of sortedPrefixes) {
+        pills.push({ key: `prefix:${prefix}`, label: prefix, count, type: "prefix" });
+      }
+
+      return pills;
+    }
+
+    function formatCategoryLabel(category) {
+      switch (category) {
+        case "copied": return "Copied";
+        case "modtime": return "Mod time";
+        case "transfer": return "Transfer";
+        case "checks": return "Checks";
+        case "notice": return "Notice";
+        case "idle": return "Nothing to transfer";
+        case "error": return "Errors";
+        case "git": return ".git";
+        default: return "Info";
+      }
+    }
+
+    function applyFilters() {
+      const items = state.mode === "folder" ? state.runs : state.events;
+      return items
+        .filter(matchesDate)
+        .filter(matchesStatus)
+        .filter(matchesPill)
+        .filter((item) => state.mode === "folder"
+          ? matchesSearch(item.folder, item.destination, item.status, item.sourceFile, item.startedAt, item.endedAt)
+          : matchesSearch(item.path, item.prefix, item.message, item.timestamp, item.category, item.raw))
         .slice()
-        .sort((left, right) => right.sortKey - left.sortKey);
+        .sort((left, right) => toEpoch((right.endedAt || right.startedAt || right.timestamp || 0)) - toEpoch((left.endedAt || left.startedAt || left.timestamp || 0)));
     }
 
     function render() {
-      const runs = filteredRuns();
-      const events = filteredEvents();
-      const summary = summarizeRuns(runs);
-      const totalSuccess = runs.filter((run) => run.status === "success").length;
-      const totalFailed = runs.filter((run) => run.status === "failed").length;
-      const totalUnknown = runs.filter((run) => run.status === "unknown").length;
-      const copiedTotal = events.filter((event) => event.kind === "copied").length;
-      const latest = runs[0] ? formatDisplayTimestamp(runs[0].endedAt || runs[0].startedAt) : "--";
+      syncModeUI();
 
-      elements.jobCount.textContent = summary.length;
-      elements.successCount.textContent = totalSuccess;
-      elements.failedCount.textContent = totalFailed;
-      elements.copiedCount.textContent = copiedTotal;
-      elements.lineCount.textContent = events.length;
+      const filteredItems = applyFilters();
+      const summaryRows = state.mode === "folder" ? summarizeFolderRuns(filteredItems) : buildFlatSummaryRows(filteredItems);
+      const events = state.mode === "folder" ? state.events.filter(matchesDate).filter((event) => matchesSearch(event.path, event.prefix, event.message, event.timestamp, event.category, event.raw)) : filteredItems;
+      const latest = state.mode === "folder"
+        ? (filteredItems[0] ? formatDisplayTimestamp(filteredItems[0].endedAt || filteredItems[0].startedAt) : "--")
+        : (events[0] ? formatDisplayTimestamp(events[0].timestamp) : "--");
+
+      if (state.mode === "folder") {
+        elements.jobCount.textContent = summaryRows.length;
+        elements.successCount.textContent = filteredItems.filter((item) => item.status === "success").length;
+        elements.failedCount.textContent = filteredItems.filter((item) => item.status === "failed").length;
+        elements.copiedCount.textContent = events.filter((event) => event.category === "copied").length;
+        elements.lineCount.textContent = events.length;
+      } else {
+        elements.jobCount.textContent = summaryRows.length;
+        elements.successCount.textContent = filteredItems.filter((item) => item.category === "copied").length;
+        elements.failedCount.textContent = filteredItems.filter((item) => item.category === "error" || item.category === "notice").length;
+        elements.copiedCount.textContent = filteredItems.filter((item) => item.category === "copied").length;
+        elements.lineCount.textContent = filteredItems.length;
+      }
+
       elements.latestRun.textContent = latest;
-
+      renderPills();
       setVisibleSection();
-      renderJobTable(summary);
+      renderSummaryTable(summaryRows, filteredItems);
       renderActivityTable(events);
-      renderCharts(summary, runs);
+      renderCharts(summaryRows, filteredItems, events);
+    }
+
+    function syncModeUI() {
+      const folderMode = state.mode === "folder";
+      const statusOptions = folderMode
+        ? [
+            ["all", "All statuses"],
+            ["success", "Success"],
+            ["failed", "Failed"],
+            ["unknown", "Unknown"],
+          ]
+        : [
+            ["all", "All types"],
+            ["copied", "Copied"],
+            ["modtime", "Mod time"],
+            ["transfer", "Transfer"],
+            ["checks", "Checks"],
+            ["notice", "Notice"],
+            ["idle", "No transfer"],
+            ["error", "Errors"],
+            ["git", "Git"],
+            ["info", "Info"],
+          ];
+
+      elements.statusFilter.innerHTML = statusOptions.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+      if (!statusOptions.some(([value]) => value === state.status)) {
+        state.status = "all";
+      }
+      elements.statusFilter.value = state.status;
+
+      const viewOptions = folderMode
+        ? [
+            ["jobs", "Folder summary"],
+            ["activity", "Recent activity"],
+          ]
+        : [
+            ["jobs", "Content summary"],
+            ["activity", "Parsed activity"],
+          ];
+
+      elements.viewFilter.innerHTML = viewOptions.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+      if (!viewOptions.some(([value]) => value === state.view)) {
+        state.view = "jobs";
+      }
+      elements.viewFilter.value = state.view;
+
+      const labels = folderMode
+        ? ["Backup folders", "Successful runs", "Failed runs", "Copied files", "Parsed events", "Latest run"]
+        : ["Log categories", "Copied lines", "Warnings / errors", "Path groups", "Parsed events", "Latest timestamp"];
+
+      elements.metricLabels.forEach((label, index) => {
+        if (labels[index]) label.textContent = labels[index];
+      });
+
+      elements.summaryTitle.textContent = folderMode ? "Folder summary" : "Log summary";
+      elements.summarySubtitle.textContent = folderMode ? "One row per backup target" : "Categories and path groups derived from the raw log";
+      elements.activityTitle.textContent = folderMode ? "Recent activity" : "Parsed activity";
+      elements.activitySubtitle.textContent = folderMode ? "Parsed log lines and job markers" : "Flat log events grouped by kind and path";
+      elements.statusChartTitle.textContent = folderMode ? "Run outcomes" : "Content mix";
+      elements.statusChartSubtitle.textContent = folderMode ? "Success vs failed runs across all folders" : "Category breakdown from the raw log";
+      elements.folderChartTitle.textContent = folderMode ? "Folder performance" : "Path groups";
+      elements.folderChartSubtitle.textContent = folderMode ? "Success and failure counts by backup folder" : "Top source paths extracted from copied and modified lines";
+
+      elements.summaryHeaderRow.innerHTML = folderMode
+        ? "<th>Folder</th><th>Destination</th><th>Success</th><th>Failed</th><th>Last run</th><th>Status</th>"
+        : "<th>Category</th><th>Count</th><th>Share</th><th>Examples</th><th>Last seen</th><th>Type</th>";
+
+      elements.activityHeaderRow.innerHTML = folderMode
+        ? "<th style=\"width: 180px;\">Timestamp</th><th style=\"width: 120px;\">Type</th><th style=\"width: 170px;\">Folder</th><th>Details</th>"
+        : "<th style=\"width: 180px;\">Timestamp</th><th style=\"width: 130px;\">Category</th><th style=\"width: 200px;\">Path</th><th>Details</th>";
+    }
+
+    function renderPills() {
+      if (!state.pills.length) {
+        elements.pillRail.innerHTML = '<span class="muted">No derived pills yet. Load a folder or a log file to populate this rail.</span>';
+        return;
+      }
+
+      elements.pillRail.innerHTML = state.pills.map((pill) => {
+        const active = state.activePill === pill.key ? " active" : "";
+        return `<button type="button" class="pill${active}" data-pill="${escapeHtml(pill.key)}">${escapeHtml(pill.label)} <span class="muted">${pill.count}</span></button>`;
+      }).join("");
     }
 
     function setVisibleSection() {
@@ -953,22 +1305,46 @@
       elements.activitySection.classList.toggle("section-hidden", state.view !== "activity");
     }
 
-    function renderJobTable(summary) {
-      if (summary.length === 0) {
-        elements.jobTableBody.innerHTML = '<tr><td colspan="6" class="empty">No folder runs match the current filters.</td></tr>';
+    function renderSummaryTable(summaryRows, filteredItems) {
+      if (state.mode === "folder") {
+        if (summaryRows.length === 0) {
+          elements.jobTableBody.innerHTML = '<tr><td colspan="6" class="empty">No folder runs match the current filters.</td></tr>';
+          return;
+        }
+
+        elements.jobTableBody.innerHTML = summaryRows.map((row) => `
+          <tr>
+            <td class="path"><strong>${escapeHtml(row.folder)}</strong><span>${escapeHtml(row.sourceFile || "")}</span></td>
+            <td class="muted">${escapeHtml(row.destination)}</td>
+            <td>${row.success}</td>
+            <td>${row.failed}</td>
+            <td>${escapeHtml(formatDisplayTimestamp(row.latest))}</td>
+            <td><span class="level ${escapeHtml(statusBucket(row.status))}"><span class="dot"></span>${escapeHtml(String(row.status || "").toUpperCase())}</span></td>
+          </tr>
+        `).join("");
         return;
       }
 
-      elements.jobTableBody.innerHTML = summary.map((row) => `
-        <tr>
-          <td class="path"><strong>${escapeHtml(row.folder)}</strong><span>${escapeHtml(row.sourceFile || "")}</span></td>
-          <td class="muted">${escapeHtml(row.destination)}</td>
-          <td>${row.success}</td>
-          <td>${row.failed}</td>
-          <td>${escapeHtml(formatDisplayTimestamp(row.latest))}</td>
-          <td><span class="level ${escapeHtml(statusBucket(row.status))}"><span class="dot"></span>${escapeHtml(row.status.toUpperCase())}</span></td>
-        </tr>
-      `).join("");
+      if (summaryRows.length === 0) {
+        elements.jobTableBody.innerHTML = '<tr><td colspan="6" class="empty">No log categories match the current filters.</td></tr>';
+        return;
+      }
+
+      const total = filteredItems.length || 1;
+      elements.jobTableBody.innerHTML = summaryRows.map((row) => {
+        const share = Math.round((row.count / total) * 100);
+        const examples = row.examples.length ? row.examples.map(escapeHtml).join("<br>") : "-";
+        return `
+          <tr>
+            <td class="path"><strong>${escapeHtml(formatCategoryLabel(row.category))}</strong><span>${escapeHtml(row.category)}</span></td>
+            <td>${row.count}</td>
+            <td>${share}%</td>
+            <td class="muted">${examples}</td>
+            <td>${escapeHtml(formatDisplayTimestamp(row.latest))}</td>
+            <td><span class="level info"><span class="dot"></span>CONTENT</span></td>
+          </tr>
+        `;
+      }).join("");
     }
 
     function renderActivityTable(events) {
@@ -977,124 +1353,193 @@
         return;
       }
 
+      if (state.mode === "folder") {
+        elements.activityTableBody.innerHTML = events.map((event) => `
+          <tr>
+            <td>${escapeHtml(formatDisplayTimestamp(event.timestamp))}</td>
+            <td><span class="level ${escapeHtml(activityClass(event.kind || event.category))}"><span class="dot"></span>${escapeHtml(String(event.kind || event.category || "info").toUpperCase())}</span></td>
+            <td class="path">${escapeHtml(event.folder || "-")}</td>
+            <td>${escapeHtml(event.details)}</td>
+          </tr>
+        `).join("");
+        return;
+      }
+
       elements.activityTableBody.innerHTML = events.map((event) => `
         <tr>
           <td>${escapeHtml(formatDisplayTimestamp(event.timestamp))}</td>
-          <td><span class="level ${escapeHtml(activityClass(event.kind))}"><span class="dot"></span>${escapeHtml(event.kind.toUpperCase())}</span></td>
-          <td class="path">${escapeHtml(event.folder || "-")}</td>
-          <td>${escapeHtml(event.details)}</td>
+          <td><span class="level ${escapeHtml(activityClass(event.category))}"><span class="dot"></span>${escapeHtml(formatCategoryLabel(event.category).toUpperCase())}</span></td>
+          <td class="path">${escapeHtml(event.path || event.prefix || "-")}</td>
+          <td>${escapeHtml(event.message)}</td>
         </tr>
       `).join("");
     }
 
     function activityClass(kind) {
       if (kind === "success") return "success";
+      if (kind === "failed" || kind === "error") return "failed";
+      if (kind === "unknown" || kind === "warn" || kind === "notice") return "unknown";
+      return "info";
+    }
+
+    function statusBucket(kind) {
+      if (kind === "success") return "success";
       if (kind === "failed") return "failed";
       if (kind === "unknown" || kind === "warn") return "unknown";
       return "info";
     }
 
-    function renderCharts(summary, runs) {
-      const successTotal = runs.filter((run) => run.status === "success").length;
-      const failedTotal = runs.filter((run) => run.status === "failed").length;
-      const unknownTotal = runs.filter((run) => run.status === "unknown").length;
-
-      const folderLabels = summary.slice(0, 12).map((row) => row.folder);
-      const successData = summary.slice(0, 12).map((row) => row.success);
-      const failedData = summary.slice(0, 12).map((row) => row.failed);
-
+    function renderCharts(summaryRows, filteredItems, events) {
       const statusCtx = document.getElementById("statusChart").getContext("2d");
       const folderCtx = document.getElementById("folderChart").getContext("2d");
 
       if (statusChart) statusChart.destroy();
       if (folderChart) folderChart.destroy();
 
+      if (state.mode === "folder") {
+        const successTotal = filteredItems.filter((run) => run.status === "success").length;
+        const failedTotal = filteredItems.filter((run) => run.status === "failed").length;
+        const unknownTotal = filteredItems.filter((run) => run.status === "unknown").length;
+        const folderLabels = summaryRows.slice(0, 12).map((row) => row.folder);
+        const successData = summaryRows.slice(0, 12).map((row) => row.success);
+        const failedData = summaryRows.slice(0, 12).map((row) => row.failed);
+
+        statusChart = new Chart(statusCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Success", "Failed", "Unknown"],
+            datasets: [{
+              data: [successTotal, failedTotal, unknownTotal],
+              backgroundColor: ["#34d399", "#fb7185", "#fbbf24"],
+              borderColor: "rgba(15, 23, 42, 0.9)",
+              borderWidth: 2,
+            }],
+          },
+          options: chartOptions(),
+        });
+
+        folderChart = new Chart(folderCtx, {
+          type: "bar",
+          data: {
+            labels: folderLabels,
+            datasets: [
+              { label: "Success", data: successData, backgroundColor: "rgba(52, 211, 153, 0.78)" },
+              { label: "Failed", data: failedData, backgroundColor: "rgba(251, 113, 133, 0.82)" },
+            ],
+          },
+          options: barChartOptions(true),
+        });
+        return;
+      }
+
+      const categoryCounts = new Map();
+      const prefixCounts = new Map();
+      for (const event of events) {
+        categoryCounts.set(event.category, (categoryCounts.get(event.category) || 0) + 1);
+        if (event.prefix) {
+          prefixCounts.set(event.prefix, (prefixCounts.get(event.prefix) || 0) + 1);
+        }
+      }
+
+      const categories = Array.from(categoryCounts.entries()).sort((left, right) => right[1] - left[1]).slice(0, 8);
+      const prefixes = Array.from(prefixCounts.entries()).sort((left, right) => right[1] - left[1]).slice(0, 10);
+
       statusChart = new Chart(statusCtx, {
         type: "doughnut",
         data: {
-          labels: ["Success", "Failed", "Unknown"],
+          labels: categories.map(([key]) => formatCategoryLabel(key)),
           datasets: [{
-            data: [successTotal, failedTotal, unknownTotal],
-            backgroundColor: ["#34d399", "#fb7185", "#fbbf24"],
+            data: categories.map(([, count]) => count),
+            backgroundColor: ["#7dd3fc", "#34d399", "#fbbf24", "#fb7185", "#c084fc", "#94a3b8", "#60a5fa", "#f97316"],
             borderColor: "rgba(15, 23, 42, 0.9)",
             borderWidth: 2,
           }],
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: "bottom",
-              labels: { color: "#e5eefc" },
-            },
-          },
-        },
+        options: chartOptions(),
       });
 
       folderChart = new Chart(folderCtx, {
         type: "bar",
         data: {
-          labels: folderLabels,
-          datasets: [
-            {
-              label: "Success",
-              data: successData,
-              backgroundColor: "rgba(52, 211, 153, 0.78)",
-            },
-            {
-              label: "Failed",
-              data: failedData,
-              backgroundColor: "rgba(251, 113, 133, 0.82)",
-            },
-          ],
+          labels: prefixes.map(([prefix]) => prefix),
+          datasets: [{
+            label: "Occurrences",
+            data: prefixes.map(([, count]) => count),
+            backgroundColor: "rgba(125, 211, 252, 0.72)",
+          }],
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: "y",
-          scales: {
-            x: {
-              stacked: true,
-              ticks: { color: "#cbd5e1" },
-              grid: { color: "rgba(148, 163, 184, 0.12)" },
-            },
-            y: {
-              stacked: true,
-              ticks: { color: "#cbd5e1" },
-              grid: { color: "rgba(148, 163, 184, 0.08)" },
-            },
-          },
-          plugins: {
-            legend: {
-              position: "bottom",
-              labels: { color: "#e5eefc" },
-            },
-          },
-        },
+        options: barChartOptions(false),
       });
     }
 
+    function chartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "#e5eefc" },
+          },
+        },
+      };
+    }
+
+    function barChartOptions(stacked) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y",
+        scales: {
+          x: {
+            stacked: Boolean(stacked),
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(148, 163, 184, 0.12)" },
+          },
+          y: {
+            stacked: Boolean(stacked),
+            ticks: { color: "#cbd5e1" },
+            grid: { color: "rgba(148, 163, 184, 0.08)" },
+          },
+        },
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "#e5eefc" },
+          },
+        },
+      };
+    }
+
     function exportCsv() {
-      const rows = summarizeRuns(filteredRuns()).map((row) => ({
-        folder: row.folder,
-        destination: row.destination,
-        success: row.success,
-        failed: row.failed,
-        latestRun: row.latest,
-        status: row.status,
-      }));
-      downloadBlob(toCsv(rows), "text/csv;charset=utf-8;", `rclone-folder-summary-${timestampSuffix()}.csv`);
+      const rows = state.mode === "folder"
+        ? summarizeFolderRuns(applyFilters()).map((row) => ({
+            folder: row.folder,
+            destination: row.destination,
+            success: row.success,
+            failed: row.failed,
+            latestRun: row.latest,
+            status: row.status,
+          }))
+        : buildFlatSummaryRows(applyFilters()).map((row) => ({
+            category: row.category,
+            count: row.count,
+            latest: row.latest,
+            examples: row.examples.join(" | "),
+          }));
+
+      downloadBlob(toCsv(rows), "text/csv;charset=utf-8;", `rclone-dashboard-${timestampSuffix()}.csv`);
     }
 
     function exportJson() {
       const payload = {
         exportedAt: new Date().toISOString(),
+        mode: state.mode,
+        source: state.sourceName,
         selectedDate: state.selectedDate || "all",
-        folderCount: summarizeRuns(filteredRuns()).length,
-        runs: filteredRuns(),
-        summary: summarizeRuns(filteredRuns()),
-        events: filteredEvents(),
+        summary: state.mode === "folder" ? summarizeFolderRuns(applyFilters()) : buildFlatSummaryRows(applyFilters()),
+        events: applyFilters(),
+        pills: state.pills,
       };
       downloadBlob(JSON.stringify(payload, null, 2), "application/json;charset=utf-8;", `rclone-dashboard-${timestampSuffix()}.json`);
     }
@@ -1107,51 +1552,68 @@
       }
 
       const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-      const summary = summarizeRuns(filteredRuns());
-      const runs = filteredRuns();
-      const events = filteredEvents().slice(0, 24);
       const width = doc.internal.pageSize.getWidth();
       const height = doc.internal.pageSize.getHeight();
-      const pageTitle = "Rclone Backup Dashboard";
+      const items = applyFilters();
+      const summaryRows = state.mode === "folder" ? summarizeFolderRuns(items) : buildFlatSummaryRows(items);
+      const pageTitle = state.mode === "folder" ? "Rclone Folder Dashboard" : "Rclone Log Dashboard";
+      const subtitle = `Source: ${state.sourceName || "not loaded"}  |  Date: ${state.selectedDate || "all available"}`;
 
-      addPdfHeader(doc, pageTitle, `Folder: ${state.folderName || "not loaded"}  |  Date: ${state.selectedDate || "all available"}`);
+      addPdfHeader(doc, pageTitle, subtitle);
 
-      const metrics = [
-        ["Folders", String(summary.length), [8, 18, 38]],
-        ["Success", String(runs.filter((run) => run.status === "success").length), [52, 211, 153]],
-        ["Failed", String(runs.filter((run) => run.status === "failed").length), [251, 113, 133]],
-        ["Copied", String(filteredEvents().filter((event) => event.kind === "copied").length), [125, 211, 252]],
-      ];
+      const metrics = state.mode === "folder"
+        ? [
+            ["Folders", String(summaryRows.length), [8, 18, 38]],
+            ["Success", String(items.filter((run) => run.status === "success").length), [52, 211, 153]],
+            ["Failed", String(items.filter((run) => run.status === "failed").length), [251, 113, 133]],
+            ["Copied", String(state.events.filter((event) => event.category === "copied").length), [125, 211, 252]],
+          ]
+        : [
+            ["Categories", String(summaryRows.length), [8, 18, 38]],
+            ["Copied", String(items.filter((event) => event.category === "copied").length), [52, 211, 153]],
+            ["Warnings", String(items.filter((event) => event.category === "notice" || event.category === "error").length), [251, 113, 133]],
+            ["Prefixes", String(summaryRows.filter((row) => row.kind === "category").length), [125, 211, 252]],
+          ];
 
       renderPdfMetrics(doc, metrics, 36, 92, width - 72);
 
       const statusCanvas = document.getElementById("statusChart");
       const folderCanvas = document.getElementById("folderChart");
-      if (statusCanvas) {
-        doc.addImage(statusCanvas.toDataURL("image/png", 1.0), "PNG", 36, 170, 220, 156);
-      }
-      if (folderCanvas) {
-        doc.addImage(folderCanvas.toDataURL("image/png", 1.0), "PNG", 282, 170, 470, 156);
-      }
+      if (statusCanvas) doc.addImage(statusCanvas.toDataURL("image/png", 1.0), "PNG", 36, 170, 220, 156);
+      if (folderCanvas) doc.addImage(folderCanvas.toDataURL("image/png", 1.0), "PNG", 282, 170, 470, 156);
+
+      const summaryHead = state.mode === "folder"
+        ? [["Folder", "Destination", "Success", "Failed", "Latest run", "Status"]]
+        : [["Category", "Count", "Share", "Examples", "Latest seen", "Type"]];
+
+      const summaryBody = state.mode === "folder"
+        ? summaryRows.map((row) => [row.folder, row.destination, row.success, row.failed, row.latest, String(row.status).toUpperCase()])
+        : summaryRows.map((row, index) => [formatCategoryLabel(row.category), row.count, `${Math.round((row.count / (items.length || 1)) * 100)}%`, row.examples.join(" | "), row.latest, index === 0 ? "CATEGORY" : "CONTENT"]);
 
       doc.autoTable({
         startY: 348,
-        head: [["Folder", "Destination", "Success", "Failed", "Latest run", "Status"]],
-        body: summary.map((row) => [row.folder, row.destination, row.success, row.failed, row.latest, String(row.status).toUpperCase()]),
+        head: summaryHead,
+        body: summaryBody,
         theme: "grid",
         styles: { fontSize: 8, cellPadding: 4, textColor: [15, 23, 42] },
         headStyles: { fillColor: [8, 18, 38], textColor: [229, 238, 252], fontStyle: "bold" },
         alternateRowStyles: { fillColor: [241, 245, 249] },
-        columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } },
         margin: { left: 36, right: 36 },
         didDrawPage: (data) => addPdfFooter(doc, data, height),
       });
 
       const nextY = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 348) + 22;
+      const activityHead = state.mode === "folder"
+        ? [["Timestamp", "Type", "Folder", "Details"]]
+        : [["Timestamp", "Category", "Path", "Details"]];
+      const activityBody = state.mode === "folder"
+        ? items.slice(0, 24).map((event) => [event.timestamp || "--", String(event.kind || event.category || "info").toUpperCase(), event.folder || "-", event.details])
+        : items.slice(0, 24).map((event) => [event.timestamp || "--", formatCategoryLabel(event.category).toUpperCase(), event.path || event.prefix || "-", event.message]);
+
       doc.autoTable({
         startY: nextY,
-        head: [["Timestamp", "Type", "Folder", "Details"]],
-        body: events.map((event) => [event.timestamp || "--", String(event.kind).toUpperCase(), event.folder || "-", event.details]),
+        head: activityHead,
+        body: activityBody,
         theme: "grid",
         styles: { fontSize: 7, cellPadding: 3, textColor: [15, 23, 42] },
         headStyles: { fillColor: [30, 41, 59], textColor: [229, 238, 252], fontStyle: "bold" },
@@ -1205,6 +1667,65 @@
       doc.text(`Generated ${new Date().toLocaleString()}`, 36, height - 16);
     }
 
+    function formatDisplayTimestamp(value) {
+      return value || "--";
+    }
+
+    function setStatus(message) {
+      elements.folderStatus.textContent = message;
+    }
+
+    async function ensurePermission(handle, requestIfNeeded) {
+      const options = { mode: "read" };
+      if ((await handle.queryPermission(options)) === "granted") {
+        return true;
+      }
+
+      if (!requestIfNeeded) {
+        return false;
+      }
+
+      return (await handle.requestPermission(options)) === "granted";
+    }
+
+    async function storeSourceSnapshot(source) {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction("settings", "readwrite");
+        transaction.objectStore("settings").put(source, "source");
+        transaction.oncomplete = () => {
+          localStorage.setItem(STORAGE_KEYS.source, source.kind);
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error || new Error("Unable to store source snapshot"));
+      });
+    }
+
+    async function getStoredSourceSnapshot() {
+      const db = await openDatabase();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction("settings", "readonly");
+        const request = transaction.objectStore("settings").get("source");
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error || new Error("Unable to read stored source snapshot"));
+      });
+    }
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("rclone-dashboard", 2);
+
+        request.onupgradeneeded = () => {
+          if (!request.result.objectStoreNames.contains("settings")) {
+            request.result.createObjectStore("settings");
+          }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Unable to open dashboard storage"));
+      });
+    }
+
     function toCsv(rows) {
       if (rows.length === 0) return "";
       const headers = Object.keys(rows[0]);
@@ -1234,56 +1755,6 @@
 
     function timestampSuffix() {
       return new Date().toISOString().replace(/[:.]/g, "-");
-    }
-
-    function setStatus(message) {
-      elements.folderStatus.textContent = message;
-    }
-
-    async function ensurePermission(handle, requestIfNeeded) {
-      const options = { mode: "read" };
-      if ((await handle.queryPermission(options)) === "granted") {
-        return true;
-      }
-
-      if (!requestIfNeeded) {
-        return false;
-      }
-
-      return (await handle.requestPermission(options)) === "granted";
-    }
-
-    async function storeDirectoryHandle(handle) {
-      const db = await openDatabase();
-      return new Promise((resolve, reject) => {
-        const transaction = db.transaction("settings", "readwrite");
-        transaction.objectStore("settings").put(handle, "directoryHandle");
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error || new Error("Unable to store folder handle"));
-      });
-    }
-
-    async function getStoredDirectoryHandle() {
-      const db = await openDatabase();
-      return new Promise((resolve, reject) => {
-        const transaction = db.transaction("settings", "readonly");
-        const request = transaction.objectStore("settings").get("directoryHandle");
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => reject(request.error || new Error("Unable to read stored folder handle"));
-      });
-    }
-
-    function openDatabase() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open("rclone-dashboard", 1);
-
-        request.onupgradeneeded = () => {
-          request.result.createObjectStore("settings");
-        };
-
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error("Unable to open dashboard storage"));
-      });
     }
 
     function escapeHtml(value) {

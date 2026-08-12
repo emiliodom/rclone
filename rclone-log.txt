@@ -61,3 +61,282 @@ Checks:              8678 / 8678, 100%, Listed 21641
 Transferred:            1 / 1, 100%
 Elapsed time:      3m21.8s
 
+2026/08/12 17:07:40 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:                85 / 85, 100%, Listed 77995
+Elapsed time:        59.9s
+
+2026/08/12 17:08:16 INFO  : There was nothing to transfer
+2026/08/12 17:08:16 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             47989 / 47989, 100%, Listed 95999
+Elapsed time:      1m35.8s
+
+2026/08/12 17:08:18 INFO  : Cataleya/3era unidad: Set directory modification time (using SetModTime)
+2026/08/12 17:08:19 INFO  : CONSTANCIA COMISIONADO.docx: Copied (new)
+2026/08/12 17:08:19 INFO  : formulario.pdf: Copied (new)
+2026/08/12 17:08:19 INFO  : Parasol/Dashboards: Set directory modification time (using SetModTime)
+2026/08/12 17:08:20 INFO  : Parasol/plex-to-big-query: Set directory modification time (using SetModTime)
+2026/08/12 17:08:20 INFO  : Cataleya/3era unidad/mate: Set directory modification time (using SetModTime)
+2026/08/12 17:08:20 INFO  : CertificacionCatalogacion.pdf: Copied (new)
+2026/08/12 17:08:21 INFO  : Cataleya/3era unidad/Cuadernillo_Plant_Parts_Cataleya.docx: Copied (new)
+2026/08/12 17:08:21 INFO  : Cataleya/3era unidad/Cuadernillo_Plant_Parts_Cataleya.pdf: Copied (new)
+2026/08/12 17:08:23 INFO  : Parasol/Dashboards/MFG Job Schedule - Done 2025.csv: Copied (new)
+2026/08/12 17:08:23 INFO  : Parasol/Dashboards/MFG Job Schedule - Success.csv: Copied (new)
+2026/08/12 17:08:23 INFO  : Parasol/Dashboards/MFG Job Schedule - Inventory Availability.csv: Copied (new)
+2026/08/12 17:08:24 INFO  : Parasol/Dashboards/Parasol Group Mail - Datasource Reports.pdf: Copied (new)
+2026/08/12 17:08:25 INFO  : Parasol/Dashboards/MFG Job Schedule - 2025 List.csv: Copied (new)
+2026/08/12 17:08:28 INFO  : Parasol/Dashboards/repo/.git/objects: Set directory modification time (using SetModTime)
+2026/08/12 17:08:39 INFO  : ejerciciosjava/.git/objects: Set directory modification time (using SetModTime)
+2026/08/12 17:08:39 INFO  : ejerciciosjava/.git/FETCH_HEAD: Updated modification time in destination
+2026/08/12 17:09:17 INFO  : 
+Transferred:   	    1.273 MiB / 1.273 MiB, 100%, 217.162 KiB/s, ETA 0s
+Checks:             11258 / 11258, 100%, Listed 25573
+Transferred:           10 / 10, 100%
+Elapsed time:        59.9s
+
+2026/08/12 17:09:29 INFO  : Parasol/plex-to-big-query/.git: Set directory modification time (using SetModTime)
+2026/08/12 17:09:30 INFO  : Parasol/plex-to-big-query/catalog: Set directory modification time (using SetModTime)
+2026/08/12 17:09:31 INFO  : Parasol/plex-to-big-query/docs: Set directory modification time (using SetModTime)
+2026/08/12 17:09:31 INFO  : Parasol/plex-to-big-query/Dockerfile: Copied (replaced existing)
+2026/08/12 17:09:33 INFO  : Parasol/plex-to-big-query/spreadsheets: Set directory modification time (using SetModTime)
+2026/08/12 17:09:33 INFO  : Parasol/plex-to-big-query/extract_schema_catalog.py: Copied (new)
+2026/08/12 17:09:44 INFO  : Parasol/plex-to-big-query/.git/gk: Set directory modification time (using SetModTime)
+2026/08/12 17:09:45 INFO  : Parasol/plex-to-big-query/.git/COMMIT_EDITMSG: Copied (replaced existing)
+2026/08/12 17:09:45 INFO  : Parasol/plex-to-big-query/.git/FETCH_HEAD: Copied (replaced existing)
+2026/08/12 17:09:46 INFO  : Parasol/plex-to-big-query/.git/objects: Set directory modification time (using SetModTime)
+2026/08/12 17:09:46 INFO  : Parasol/plex-to-big-query/.git/index: Copied (replaced existing)
+2026/08/12 17:09:54 INFO  : Parasol/plex-to-big-query/catalog/plex_quality_views_catalog.md: Copied (replaced existing)
+2026/08/12 17:09:54 INFO  : Parasol/plex-to-big-query/catalog/plex_part_views_catalog.md: Copied (replaced existing)
+2026/08/12 17:09:54 INFO  : Parasol/plex-to-big-query/catalog/plex_catalog_index.md: Copied (replaced existing)
+2026/08/12 17:09:55 INFO  : Parasol/plex-to-big-query/catalog/full_schema_catalog.csv: Copied (new)
+2026/08/12 17:09:58 INFO  : Parasol/plex-to-big-query/.git/gk/config: Copied (replaced existing)
+2026/08/12 17:10:04 INFO  : proyectoPrograI/.git/objects: Set directory modification time (using SetModTime)
+2026/08/12 17:10:17 INFO  : 
+Transferred:   	    2.753 MiB / 2.753 MiB, 100%, 176.194 KiB/s, ETA 0s
+Checks:             13485 / 13485, 100%, Listed 32920
+Transferred:           20 / 20, 100%
+Elapsed time:       2m0.3s
+
+2026/08/12 17:10:21 INFO  : Parasol/plex-to-big-query/docs/MFG_JOB_SCHEDULE_BUILD_PLAN.md: Copied (replaced existing)
+2026/08/12 17:10:26 INFO  : Parasol/plex-to-big-query/.git/logs/HEAD: Copied (replaced existing)
+2026/08/12 17:10:34 INFO  : Parasol/plex-to-big-query/.git/objects/00: Set directory modification time (using SetModTime)
+2026/08/12 17:10:35 INFO  : Parasol/plex-to-big-query/.git/objects/04: Set directory modification time (using SetModTime)
+2026/08/12 17:10:37 INFO  : Parasol/plex-to-big-query/.git/objects/07: Set directory modification time (using SetModTime)
+2026/08/12 17:10:39 INFO  : Parasol/plex-to-big-query/.git/objects/16: Set directory modification time (using SetModTime)
+2026/08/12 17:10:40 INFO  : Parasol/plex-to-big-query/.git/objects/1a: Set directory modification time (using SetModTime)
+2026/08/12 17:10:42 INFO  : Parasol/plex-to-big-query/.git/objects/1e: Set directory modification time (using SetModTime)
+2026/08/12 17:10:44 INFO  : Parasol/plex-to-big-query/.git/objects/26: Set directory modification time (using SetModTime)
+2026/08/12 17:10:44 INFO  : Parasol/plex-to-big-query/.git/refs/heads: Set directory modification time (using SetModTime)
+2026/08/12 17:10:45 INFO  : Parasol/plex-to-big-query/.git/objects/29: Set directory modification time (using SetModTime)
+2026/08/12 17:10:47 INFO  : Parasol/plex-to-big-query/.git/objects/2a: Set directory modification time (using SetModTime)
+2026/08/12 17:10:48 INFO  : Parasol/plex-to-big-query/.git/logs/refs/heads/main: Copied (replaced existing)
+2026/08/12 17:10:49 INFO  : Parasol/plex-to-big-query/.git/objects/35: Set directory modification time (using SetModTime)
+2026/08/12 17:10:50 INFO  : Parasol/plex-to-big-query/.git/objects/38: Set directory modification time (using SetModTime)
+2026/08/12 17:10:51 INFO  : Parasol/plex-to-big-query/.git/objects/3a: Set directory modification time (using SetModTime)
+2026/08/12 17:10:52 INFO  : Parasol/plex-to-big-query/.git/objects/3d: Set directory modification time (using SetModTime)
+2026/08/12 17:10:54 INFO  : Parasol/plex-to-big-query/.git/objects/3e: Set directory modification time (using SetModTime)
+2026/08/12 17:10:56 INFO  : Parasol/plex-to-big-query/.git/objects/48: Set directory modification time (using SetModTime)
+2026/08/12 17:10:58 INFO  : Parasol/plex-to-big-query/.git/objects/50: Set directory modification time (using SetModTime)
+2026/08/12 17:10:58 INFO  : Parasol/plex-to-big-query/.git/refs/heads/main: Copied (replaced existing)
+2026/08/12 17:10:59 INFO  : Parasol/plex-to-big-query/.git/objects/51: Set directory modification time (using SetModTime)
+2026/08/12 17:11:01 INFO  : Parasol/plex-to-big-query/.git/objects/56: Set directory modification time (using SetModTime)
+2026/08/12 17:11:03 INFO  : Parasol/plex-to-big-query/.git/objects/58: Set directory modification time (using SetModTime)
+2026/08/12 17:11:05 INFO  : Parasol/plex-to-big-query/.git/objects/5a: Set directory modification time (using SetModTime)
+2026/08/12 17:11:06 INFO  : Parasol/plex-to-big-query/.git/objects/5e: Set directory modification time (using SetModTime)
+2026/08/12 17:11:09 INFO  : Parasol/plex-to-big-query/.git/objects/62: Set directory modification time (using SetModTime)
+2026/08/12 17:11:11 INFO  : Parasol/plex-to-big-query/reports/sql: Set directory modification time (using SetModTime)
+2026/08/12 17:11:11 INFO  : Parasol/plex-to-big-query/.git/objects/63: Set directory modification time (using SetModTime)
+2026/08/12 17:11:11 INFO  : Parasol/plex-to-big-query/.git/logs/refs/remotes/origin/main: Copied (replaced existing)
+2026/08/12 17:11:11 INFO  : Parasol/plex-to-big-query/.git/logs/refs/remotes/origin/HEAD: Copied (replaced existing)
+2026/08/12 17:11:13 INFO  : Parasol/plex-to-big-query/.git/objects/6e: Set directory modification time (using SetModTime)
+2026/08/12 17:11:15 INFO  : Parasol/plex-to-big-query/.git/objects/76: Set directory modification time (using SetModTime)
+2026/08/12 17:11:17 INFO  : Parasol/plex-to-big-query/.git/objects/79: Set directory modification time (using SetModTime)
+2026/08/12 17:11:17 INFO  : 
+Transferred:   	    2.857 MiB / 2.857 MiB, 100%, 104.352 KiB/s, ETA 0s
+Checks:             17939 / 17939, 100%, Listed 44545
+Transferred:           26 / 26, 100%
+Elapsed time:      2m59.9s
+
+2026/08/12 17:11:19 INFO  : Parasol/plex-to-big-query/.git/objects/7f: Set directory modification time (using SetModTime)
+2026/08/12 17:11:19 INFO  : Parasol/plex-to-big-query/.git/refs/remotes/origin: Set directory modification time (using SetModTime)
+2026/08/12 17:11:19 INFO  : proyectoPrograI/.git/logs/refs/remotes/origin: Set directory modification time (using SetModTime)
+2026/08/12 17:11:20 INFO  : Parasol/plex-to-big-query/.git/objects/85: Set directory modification time (using SetModTime)
+2026/08/12 17:11:22 INFO  : Parasol/plex-to-big-query/.git/objects/8e: Set directory modification time (using SetModTime)
+2026/08/12 17:11:24 INFO  : Parasol/plex-to-big-query/.git/objects/96: Set directory modification time (using SetModTime)
+2026/08/12 17:11:26 INFO  : Parasol/plex-to-big-query/.git/objects/98: Set directory modification time (using SetModTime)
+2026/08/12 17:11:27 INFO  : Parasol/plex-to-big-query/.git/objects/9d: Set directory modification time (using SetModTime)
+2026/08/12 17:11:29 INFO  : Parasol/plex-to-big-query/.git/objects/b1: Set directory modification time (using SetModTime)
+2026/08/12 17:11:31 INFO  : Parasol/plex-to-big-query/.git/objects/ba: Set directory modification time (using SetModTime)
+2026/08/12 17:11:31 INFO  : Parasol/plex-to-big-query/.git/refs/remotes/origin/HEAD: Updated modification time in destination
+2026/08/12 17:11:32 INFO  : Parasol/plex-to-big-query/.git/refs/remotes/origin/main: Copied (replaced existing)
+2026/08/12 17:11:33 INFO  : Parasol/plex-to-big-query/.git/objects/c2: Set directory modification time (using SetModTime)
+2026/08/12 17:11:35 INFO  : Parasol/plex-to-big-query/.git/objects/e8: Set directory modification time (using SetModTime)
+2026/08/12 17:11:41 INFO  : Parasol/plex-to-big-query/spreadsheets/mfg_job_schedule_open_questions_explained.md: Copied (new)
+2026/08/12 17:11:41 INFO  : Parasol/plex-to-big-query/spreadsheets/mfg_job_schedule_inventory_availability.md: Copied (new)
+2026/08/12 17:11:41 INFO  : Parasol/plex-to-big-query/spreadsheets/mfg_job_schedule_2025_list.md: Copied (new)
+2026/08/12 17:11:41 INFO  : Parasol/plex-to-big-query/spreadsheets/mfg_job_schedule_done_2025.md: Copied (new)
+2026/08/12 17:11:43 INFO  : Parasol/plex-to-big-query/spreadsheets/mfg_job_schedule_success.md: Copied (new)
+2026/08/12 17:11:43 INFO  : Parasol/plex-to-big-query/spreadsheets/mfg_job_schedule.md: Copied (replaced existing)
+2026/08/12 17:11:47 INFO  : Parasol/plex-to-big-query/.git/objects/00/a4f26273c93d1cb5b51948f8d64761f207d332: Copied (new)
+2026/08/12 17:11:48 INFO  : Parasol/plex-to-big-query/.git/objects/00/c9214eeabb0d4e77e8b576c579ebdbf225fc88: Copied (new)
+2026/08/12 17:12:17 INFO  : 
+Transferred:   	    2.899 MiB / 2.899 MiB, 100%, 64.528 KiB/s, ETA 0s
+Checks:             24644 / 24644, 100%, Listed 59879
+Transferred:           35 / 35, 100%
+Elapsed time:      3m59.9s
+
+2026/08/12 17:12:19 INFO  : Parasol/plex-to-big-query/.git/objects/04/69ec5b84585f82c2bb060d74eb087c92706c16: Copied (new)
+2026/08/12 17:12:37 INFO  : Parasol/plex-to-big-query/.git/objects/07/2df18c6519a788584efa4abe178c206fa952d5: Copied (new)
+2026/08/12 17:13:17 INFO  : 
+Transferred:   	    2.904 MiB / 2.904 MiB, 100%, 53.482 KiB/s, ETA 0s
+Checks:             28827 / 28827, 100%, Listed 68967
+Transferred:           37 / 37, 100%
+Elapsed time:       5m0.0s
+
+2026/08/12 17:13:21 INFO  : Parasol/plex-to-big-query/.git/objects/11/f6320f98e6cab92646d103f513dcc23ddd7305: Copied (new)
+2026/08/12 17:14:17 INFO  : 
+Transferred:   	    2.909 MiB / 2.909 MiB, 100%, 47.332 KiB/s, ETA 0s
+Checks:             31699 / 31699, 100%, Listed 75312
+Transferred:           38 / 38, 100%
+Elapsed time:      5m59.9s
+
+2026/08/12 17:14:29 INFO  : Parasol/plex-to-big-query/.git/objects/22/d82e392183aa6c0e68fd5260540cbfb6bcca1e: Copied (new)
+2026/08/12 17:14:55 INFO  : Parasol/plex-to-big-query/.git/objects/29/d97239676f9c9c28db9c8e24f5751a62ca8980: Copied (new)
+2026/08/12 17:15:18 INFO  : 
+Transferred:   	    3.156 MiB / 3.156 MiB, 100%, 50.069 KiB/s, ETA 0s
+Checks:             34328 / 34328, 100%, Listed 81071
+Transferred:           40 / 40, 100%
+Elapsed time:       7m1.0s
+
+2026/08/12 17:15:27 INFO  : Parasol/plex-to-big-query/.git/objects/39/2c5e4278b72a5b7414a9c8488da30c05065d83: Copied (new)
+2026/08/12 17:15:30 INFO  : Parasol/plex-to-big-query/.git/objects/3b/1ecaabe3b2000e288ecf1f7329499f8ee32a23: Copied (new)
+2026/08/12 17:16:17 INFO  : 
+Transferred:   	    3.160 MiB / 3.160 MiB, 100%, 36.521 KiB/s, ETA 0s
+Checks:             36413 / 36413, 100%, Listed 85445
+Transferred:           42 / 42, 100%
+Elapsed time:       8m0.0s
+
+2026/08/12 17:16:25 INFO  : Parasol/plex-to-big-query/.git/objects/5e/a5695c0e62fccd225ba31cbfdf6ba155be3a95: Copied (new)
+2026/08/12 17:16:32 INFO  : Parasol/plex-to-big-query/.git/objects/63/98f26365fa2361b9a677b8507e70b942e310cf: Copied (new)
+2026/08/12 17:16:32 INFO  : Parasol/plex-to-big-query/.git/objects/63/928668ecf3b3504dd6f164c39b21dfa0e855bc: Copied (new)
+2026/08/12 17:16:49 INFO  : Parasol/plex-to-big-query/.git/objects/76/ee7a46ebfbdf000ad944a87afe8d29cd81b1e2: Copied (new)
+2026/08/12 17:17:14 INFO  : Parasol/plex-to-big-query/.git/objects/95/42fe1c939db26854e5dbc6eddbc4ce3df4227a: Copied (new)
+2026/08/12 17:17:16 INFO  : Parasol/plex-to-big-query/.git/objects/98/bd65e0a14fe2761b69cccbfbcd8248e3ecfd07: Copied (new)
+2026/08/12 17:17:16 INFO  : Parasol/plex-to-big-query/.git/objects/98/0b8452a42221518185a27962e956180e64bb41: Copied (new)
+2026/08/12 17:17:17 INFO  : 
+Transferred:   	    3.178 MiB / 3.178 MiB, 100%, 20.165 KiB/s, ETA 0s
+Checks:             38292 / 38292, 100%, Listed 89223
+Transferred:           49 / 49, 100%
+Elapsed time:      8m59.9s
+
+2026/08/12 17:17:50 INFO  : Parasol/plex-to-big-query/.git/objects/d1/35d37ff99597a04d3e8691d9616f6db2f42bbe: Copied (new)
+2026/08/12 17:18:07 INFO  : Parasol/plex-to-big-query/.git/objects/fe/5e8d4fbb86f349ebc43763595f3aae8e2653c2: Copied (new)
+2026/08/12 17:18:17 INFO  : 
+Transferred:   	    3.182 MiB / 3.182 MiB, 100%, 14.850 KiB/s, ETA 0s
+Checks:             40857 / 40857, 100%, Listed 94338
+Transferred:           51 / 51, 100%
+Elapsed time:      10m0.0s
+
+2026/08/12 17:18:29 INFO  : Parasol/plex-to-big-query/.git/logs/refs/remotes/origin: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/refs/remotes/origin: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/logs/refs/heads: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/logs/refs/remotes: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/objects/04: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/logs/refs: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/refs/remotes: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/objects/07: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/refs/heads: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/objects/22: Set directory modification time (using DirSetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/objects/00: Set directory modification time (using SetModTime)
+2026/08/12 17:18:30 INFO  : Parasol/plex-to-big-query/.git/objects/11: Set directory modification time (using DirSetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/5e: Set directory modification time (using SetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/29: Set directory modification time (using SetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/63: Set directory modification time (using SetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/76: Set directory modification time (using SetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/3b: Set directory modification time (using DirSetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/39: Set directory modification time (using DirSetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/98: Set directory modification time (using SetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/95: Set directory modification time (using DirSetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/fe: Set directory modification time (using DirSetModTime)
+2026/08/12 17:18:31 INFO  : Parasol/plex-to-big-query/.git/objects/d1: Set directory modification time (using DirSetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/.git/logs: Set directory modification time (using SetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/.git/gk: Set directory modification time (using SetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/.git/refs: Set directory modification time (using SetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/.git/objects: Set directory modification time (using SetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/spreadsheets: Set directory modification time (using SetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/docs: Set directory modification time (using SetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/.git: Set directory modification time (using SetModTime)
+2026/08/12 17:18:32 INFO  : Parasol/plex-to-big-query/catalog: Set directory modification time (using SetModTime)
+2026/08/12 17:18:33 INFO  : Cataleya/3era unidad: Set directory modification time (using SetModTime)
+2026/08/12 17:18:33 INFO  : Parasol/plex-to-big-query: Set directory modification time (using SetModTime)
+2026/08/12 17:18:33 INFO  : Parasol/Dashboards: Set directory modification time (using SetModTime)
+2026/08/12 17:18:33 INFO  : Cataleya: Set directory modification time (using SetModTime)
+2026/08/12 17:18:33 INFO  : Parasol: Set directory modification time (using SetModTime)
+2026/08/12 17:18:33 INFO  : 
+Transferred:   	    3.182 MiB / 3.182 MiB, 100%, 14.850 KiB/s, ETA 0s
+Checks:             40871 / 40871, 100%, Listed 94352
+Transferred:           51 / 51, 100%
+Elapsed time:     10m16.1s
+
+2026/08/12 17:18:54 INFO  : ejerciciosjava/.git/objects: Set directory modification time (using SetModTime)
+2026/08/12 17:19:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             11361 / 11361, 100%, Listed 26083
+Elapsed time:       1m0.0s
+
+2026/08/12 17:19:45 INFO  : Parasol/plex-to-big-query/.git/objects: Set directory modification time (using SetModTime)
+2026/08/12 17:20:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             13611 / 13611, 100%, Listed 34417
+Elapsed time:       2m0.0s
+
+2026/08/12 17:21:38 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             18274 / 18274, 100%, Listed 45256
+Elapsed time:       3m1.9s
+
+2026/08/12 17:22:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             25428 / 25428, 100%, Listed 61498
+Elapsed time:      3m59.9s
+
+2026/08/12 17:23:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             29347 / 29347, 100%, Listed 70050
+Elapsed time:      4m59.9s
+
+2026/08/12 17:24:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             32302 / 32302, 100%, Listed 76644
+Elapsed time:      5m59.9s
+
+2026/08/12 17:25:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             34848 / 34848, 100%, Listed 82195
+Elapsed time:      6m59.9s
+
+2026/08/12 17:26:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             36756 / 36756, 100%, Listed 86113
+Elapsed time:      7m59.9s
+
+2026/08/12 17:27:35 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             38830 / 38830, 100%, Listed 90266
+Elapsed time:      8m59.9s
+
+2026/08/12 17:28:16 INFO  : There was nothing to transfer
+2026/08/12 17:28:16 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:             40906 / 40906, 100%, Listed 94394
+Elapsed time:      9m40.7s
+
+==== [mi‚. 12/08/2026 17:28:16.99] START !JOB_NAME! > !DEST! ====
+2026/08/12 17:28:24 INFO  : There was nothing to transfer
+2026/08/12 17:28:24 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:               585 / 585, 100%, Listed 1300
+Elapsed time:         3.2s
+
+==== [mi‚. 12/08/2026 17:28:24.53] END !JOB_NAME! SUCCESS ====
