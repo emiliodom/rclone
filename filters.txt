@@ -1,0 +1,49 @@
+# Core Development & Cache Folders
+- node_modules/**
+- .npm/**
+- npm/**
+- npm-cache/**
+- dist/**
+- build/**
+- .next/**
+- .cache/**
+- __pycache__/**
+- .vscode/extensions/**
+
+# Gemini Temporary & History Files
+- .gemini/tmp/**
+- .gemini/history/**
+
+# Specific Projects & Working Folders
+- a11ymeetup0626/**
+- study-french/**
+- training-plan/**
+- English/practice/**
+- Panini-World-Cup-2026-Sticker-Tracker-Offline/**
+- Local Sites/webfx/app/public/**
+- Local Sites/yardsales/app/public/wp-content/themes/yardsales/**
+- AppData/Roaming/Local/blueprints/Curso de creación de themes en wordpress/app/public/wp-content/themes/yardsales/**
+- recursos/**
+- recursos-didacticos/**
+- URL/Intro a la programación/documentosplanificacinprogramacin1-/**
+
+# Games
+- Games/**
+- GOG Games/**
+
+# Windows System Folders (Included for safety)
+- $Recycle.Bin/**
+- System Volume Information/**
+- Documents and Settings/**
+- Intel/**
+- OneDriveTemp/**
+- PerfLogs/**
+- ProgramData/**
+- Windows/**
+- Program Files/**
+- Program Files (x86)/**
+- nul/**
+# Ignore Windows localized symlinks
+- Mi música/**
+- Mis imágenes/**
+- Mis vídeos/**

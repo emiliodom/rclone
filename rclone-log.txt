@@ -1,0 +1,63 @@
+2026/08/12 17:03:02 NOTICE: Mi música: Can't follow symlink without -L/--copy-links
+2026/08/12 17:03:02 NOTICE: Mis imágenes: Can't follow symlink without -L/--copy-links
+2026/08/12 17:03:02 NOTICE: Mis vídeos: Can't follow symlink without -L/--copy-links
+2026/08/12 17:03:03 INFO  : There was nothing to transfer
+2026/08/12 17:03:03 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:                94 / 94, 100%, Listed 214
+Elapsed time:         1.2s
+
+2026/08/12 17:03:05 INFO  : Legado del Mar: Set directory modification time (using SetModTime)
+2026/08/12 17:03:06 INFO  : Images/Screenshots: Set directory modification time (using SetModTime)
+2026/08/12 17:03:07 INFO  : Legado del Mar/773339174_1051308060615181_5088945734514714804_n.jpg: Copied (new)
+2026/08/12 17:03:07 INFO  : Legado del Mar/773436604_1051307873948533_8365821542353654312_n.jpg: Copied (new)
+2026/08/12 17:03:07 INFO  : Legado del Mar/771802331_1051307820615205_4865348108340900280_n.jpg: Copied (new)
+2026/08/12 17:03:11 INFO  : Images/Screenshots/Captura de pantalla 2026-08-11 171746.png: Copied (new)
+2026/08/12 17:03:12 INFO  : Images/Screenshots/Captura de pantalla 2026-08-11 162633.png: Copied (new)
+2026/08/12 17:03:12 INFO  : Images/Screenshots/Captura de pantalla 2026-08-12 120833.png: Copied (new)
+2026/08/12 17:03:12 INFO  : Images/Screenshots: Set directory modification time (using SetModTime)
+2026/08/12 17:03:13 INFO  : Legado del Mar: Set directory modification time (using SetModTime)
+2026/08/12 17:03:13 INFO  : Images: Set directory modification time (using SetModTime)
+2026/08/12 17:03:13 INFO  : 
+Transferred:   	    1.558 MiB / 1.558 MiB, 100%, 531.648 KiB/s, ETA 0s
+Checks:              1715 / 1715, 100%, Listed 3468
+Transferred:            6 / 6, 100%
+Elapsed time:         9.0s
+
+2026/08/12 17:03:15 INFO  : There was nothing to transfer
+2026/08/12 17:03:15 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:               261 / 261, 100%, Listed 554
+Elapsed time:         1.3s
+
+2026/08/12 17:03:16 INFO  : There was nothing to transfer
+2026/08/12 17:03:16 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:                12 / 12, 100%, Listed 31
+Elapsed time:         0.4s
+
+2026/08/12 17:03:19 INFO  : Carta de Recomendación.docx: Copied (new)
+2026/08/12 17:04:17 INFO  : 
+Transferred:   	   14.678 KiB / 14.678 KiB, 100%, 14.667 KiB/s, ETA 0s
+Checks:              2405 / 2405, 100%, Listed 6603
+Transferred:            1 / 1, 100%
+Elapsed time:       1m0.0s
+
+2026/08/12 17:05:17 INFO  : 
+Transferred:   	   14.678 KiB / 14.678 KiB, 100%, 14.667 KiB/s, ETA 0s
+Checks:              5210 / 5210, 100%, Listed 13520
+Transferred:            1 / 1, 100%
+Elapsed time:       2m0.0s
+
+2026/08/12 17:06:17 INFO  : 
+Transferred:   	   14.678 KiB / 14.678 KiB, 100%, 14.667 KiB/s, ETA 0s
+Checks:              7717 / 7717, 100%, Listed 19482
+Transferred:            1 / 1, 100%
+Elapsed time:      2m59.9s
+
+2026/08/12 17:06:39 INFO  : 
+Transferred:   	   14.678 KiB / 14.678 KiB, 100%, 14.667 KiB/s, ETA 0s
+Checks:              8678 / 8678, 100%, Listed 21641
+Transferred:            1 / 1, 100%
+Elapsed time:      3m21.8s
+
